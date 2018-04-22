@@ -1,3 +1,4 @@
+import style from './assets/styles/main.scss';
 import {html, render, svg, repeat} from 'lit-html';
 
 // Components
@@ -11,9 +12,6 @@ import { borderParams, getBorderArray } from './modules/shapes/border';
 // import { crossParams as shapeParams, getOuterCrossArray as getOuterShapeArray } from './modules/shapes/cross';
 import { squareRingParams as shapeParams, getOuterSquareRingArray as getOuterShapeArray, getInnerSquareRingArray as getInnerShapeArray } from './modules/shapes/square-ring';
 // import { oscillatorParams as shapeParams, getOuterOscillatorArray as getOuterShapeArray, getInnerOscillatorArray as getInnerShapeArray } from './modules/shapes/oscillator';
-
-
-
 
 
 class Shape {
