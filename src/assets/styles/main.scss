@@ -35,7 +35,8 @@ svg {
   stroke-width: 1px;
   stroke: black;
   stroke-linecap: round;
-  border: 1px solid red;
+  border: 2px dashed #222;
+  box-sizing: content-box;
 }
 
 .substrate {
