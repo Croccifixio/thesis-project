@@ -5,7 +5,7 @@
   "author": "Emmanuel Odongo",
   "license": "MIT",
   "scripts": {
-    "build": "parcel build index.html",
+    "build": "rimraf dist && parcel build index.html --public-url ./",
     "start": "parcel index.html"
   },
   "dependencies": {
@@ -13,6 +13,7 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "lit-html": "^0.9.0",
-    "parcel-bundler": "^1.7.0"
+    "parcel-bundler": "^1.7.0",
+    "rimraf": "^2.6.2"
   }
 }
