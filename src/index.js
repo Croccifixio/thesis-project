@@ -1,8 +1,10 @@
 import style from './assets/styles/main.scss';
-import {html, render, svg, repeat} from 'lit-html';
+import { html, render, svg } from 'lit-html';
+import { repeat } from 'lit-html/lib/repeat';
 
 // Components
 import input from './components/input';
+import radio from './components/radio';
 
 // Helpers
 import pipeline from './modules/helpers/pipeline';
@@ -10,16 +12,65 @@ import pipeline from './modules/helpers/pipeline';
 // Shapes
 import { borderParams, getBorderArray } from './modules/shapes/border';
 // import { crossParams as shapeParams, getOuterCrossArray as getOuterShapeArray } from './modules/shapes/cross';
-import { squareRingParams as shapeParams, getOuterSquareRingArray as getOuterShapeArray, getInnerSquareRingArray as getInnerShapeArray } from './modules/shapes/square-ring';
-// import { oscillatorParams as shapeParams, getOuterOscillatorArray as getOuterShapeArray, getInnerOscillatorArray as getInnerShapeArray } from './modules/shapes/oscillator';
+import { squareRingParams, getOuterSquareRingArray, getInnerSquareRingArray } from './modules/shapes/square-ring';
+import { oscillatorParams, getOuterOscillatorArray, getInnerOscillatorArray } from './modules/shapes/oscillator';
 
 
 class Shape {
   constructor() {
-    this.initialParams = { ...borderParams, ...shapeParams };
+    this.cells = [
+      {
+        name: 'squareRing',
+        params: squareRingParams,
+        shapes: [
+          {
+            id: 1,
+            points: getOuterSquareRingArray,
+          },
+          {
+            id: 2,
+            points: getInnerSquareRingArray,
+          },
+        ],
+      },
+      {
+        name: 'oscillator',
+        params: oscillatorParams,
+        shapes: [
+          {
+            id: 1,
+            points: getOuterOscillatorArray,
+          },
+          {
+            id: 2,
+            inverse: true,
+            points: getInnerOscillatorArray,
+          },
+        ],
+      },
+    ];
+    this.currentCell = this.cells[0];
+    this.initialParams = { ...borderParams, ...this.currentCell.params };
     this.currentParams = {...this.initialParams};
     this.svgNode = document.querySelector('#svg');
-    this.formNode = document.querySelector('#form');
+    this.cellParametersNode = document.querySelector('#cell-parameters');
+    this.cellSelectorNode = document.querySelector('#cell-selector');
+  }
+
+
+  /**
+   * Returns the markup for the cell selector
+   *
+   * @returns
+   * @memberof Shape
+   */
+  getCellSelectorMarkup() {
+    return html`
+      <h2>Cell Picker</h2>
+      <div class="radios">
+        ${this.cells.map((cell, index) => radio(cell.name, index))}
+      </div>
+    `;
   }
 
 
@@ -29,12 +80,35 @@ class Shape {
    * @returns
    * @memberof Shape
    */
-  getParameterInputMarkup() {
-    const params = Object.keys(this.initialParams);
+  getCellParameterMarkup() {
+    const params = Object.keys(this.currentParams);
 
     return html`
-      ${params.map(param => input(param, this.initialParams))}
+      ${params.map(param => input(param, this.currentParams))}
     `;
+  }
+
+
+  /**
+   * Listens for changes on the cell selector
+   *
+   * @memberof Shape
+   */
+  bindCellSelector() {
+    const radios = document.querySelectorAll('#cell-selector input[type="radio"]');
+
+    radios.forEach((radio) => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          this.unbindCellParameters();
+          this.currentCell = this.cells[radio.value];
+          this.currentParams = { ...borderParams, ...this.currentCell.params };
+          this.renderParameterInputs();
+          this.renderAntenna();
+          this.bindCellParameters();
+        }
+      });
+    })
   }
 
 
@@ -43,7 +117,7 @@ class Shape {
    *
    * @memberof Shape
    */
-  bindParameterInputs() {
+  bindCellParameters() {
     const inputs = document.querySelectorAll('input[type="number"]');
 
     inputs.forEach((input) => {
@@ -54,6 +128,20 @@ class Shape {
         this.currentParams[parameterName] = parameterValue;
         this.renderAntenna();
       });
+    });
+  }
+
+
+  /**
+   * Stops listening for changes on the parameter input fields
+   *
+   * @memberof Shape
+   */
+  unbindCellParameters() {
+    const inputs = document.querySelectorAll('input[type="number"]');
+
+    inputs.forEach((input) => {
+      input.removeEventListener('change', () => {});
     });
   }
 
@@ -115,24 +203,22 @@ class Shape {
     const scale = 80 / this.initialParams['cellWidth'];
     const scaledParameters = this.scaleParameters(scale);
     const substrate = pipeline(getBorderArray, this.shiftPoints, this.flattenPoints)(scaledParameters);
-    const shape1 = pipeline(getOuterShapeArray, this.shiftPoints, this.flattenPoints)(scaledParameters);
-    const shape2 = pipeline(getInnerShapeArray, this.shiftPoints, this.flattenPoints)(scaledParameters);
+    // const shape1 = pipeline(getOuterShapeArray, this.shiftPoints, this.flattenPoints)(scaledParameters);
+    // const shape2 = pipeline(getInnerShapeArray, this.shiftPoints, this.flattenPoints)(scaledParameters);
+
 
     return svg`
       <g>
         <polygon class="substrate" points="${substrate}" />
-        <polygon class="metal" points="${shape1}" />
-        <polygon class="metal" points="${shape2}" />
+        ${repeat(
+          this.currentCell.shapes,
+          (shape) => shape.id,
+          (shape) => svg`
+            <polygon class="${ shape.inverse ? 'inverse' : 'metal' }" points=${pipeline(shape.points, this.shiftPoints, this.flattenPoints)(scaledParameters)} />
+          `
+        )}
       </g>
     `;
-
-    // TODO: Is 'Oscillator' parametrised correctly?
-    // return svg`
-    //   <g>
-    //     <polygon class="substrate" points="${substrate}" />
-    //     <polygon class="metal" points="${shape2}" />
-    //   </g>
-    // `;
   }
 
 
@@ -146,20 +232,27 @@ class Shape {
   }
 
 
+  renderCellSelector() {
+    render(this.getCellSelectorMarkup(), this.cellSelectorNode);
+  }
+
+
   /**
    * Renders the input fields
    *
    * @memberof Shape
    */
   renderParameterInputs() {
-    render(this.getParameterInputMarkup(), this.formNode);
+    render(this.getCellParameterMarkup(), this.cellParametersNode);
   }
 
 
   init() {
-    this.renderAntenna();
+    this.renderCellSelector();
     this.renderParameterInputs();
-    this.bindParameterInputs();
+    this.renderAntenna();
+    this.bindCellSelector();
+    this.bindCellParameters();
   }
 }
 
