@@ -1,4 +1,4 @@
-export const oscillatorParams = {
+const params = {
   marginVertical: 2,
   marginHorizontal: 0.825,
   marginHorizontal: 0.825,
@@ -10,7 +10,66 @@ export const oscillatorParams = {
   capHeight: 1,
 };
 
-export const getOuterOscillatorArray = (params) => {
+
+const constraints = {
+  marginVertical: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  marginHorizontal: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  marginHorizontal: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  thicknessVertical: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  thicknessHorizontal: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  stemHeight: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  stemWidth: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  capWidth: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+  capHeight: {
+    min: 0,
+    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    maxOffset: 0,
+    maxAltOffset: 0,
+  },
+}
+
+
+const getOuterArray = (params) => {
   params = Object.assign(params, {
     outerWidth: params.cellWidth - params.marginHorizontal - params.marginHorizontal,
     outerHeight: params.cellHeight - params.marginVertical - params.marginVertical,
@@ -34,7 +93,7 @@ export const getOuterOscillatorArray = (params) => {
 };
 
 
-export const getInnerOscillatorArray = (params) => {
+const getInnerArray = (params) => {
   params = Object.assign(params, {
     width: params.outerWidth - params.marginHorizontal - params.marginHorizontal,
     height: params.outerHeight - params.marginVertical - params.marginVertical,
@@ -98,3 +157,26 @@ export const getInnerOscillatorArray = (params) => {
     [xl, yb],
   ];
 };
+
+
+const download = () => {
+
+}
+
+export default {
+  name: 'oscillator',
+  params,
+  constraints,
+  shapes: [
+    {
+      id: 1,
+      points: getOuterArray,
+    },
+    {
+      id: 2,
+      inverse: true,
+      points: getInnerArray,
+    },
+  ],
+  download,
+}
