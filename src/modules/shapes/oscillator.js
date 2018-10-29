@@ -1,68 +1,65 @@
+import { getMacroFooter, getMacroHeader, getMacroLine } from '../helpers'
+
+
 const params = {
-  marginVertical: 2,
-  marginHorizontal: 0.825,
-  marginHorizontal: 0.825,
-  thicknessVertical: 1,
-  thicknessHorizontal: 1,
-  stemHeight: 3,
-  stemWidth: 1,
-  capWidth: 4,
-  capHeight: 1,
-};
+  marginVertical: 2000,
+  marginHorizontal: 825,
+  marginHorizontal: 825,
+  thicknessVertical: 1000,
+  thicknessHorizontal: 1000,
+  stemHeight: 3000,
+  stemWidth: 1000,
+  capWidth: 7000,
+  capHeight: 1000,
+}
 
 
 const constraints = {
   marginVertical: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
+    max: ['capHeight', 'stemHeight', 'thicknessVertical'],
+    maxOffset: 100,
     maxAltOffset: 0,
   },
   marginHorizontal: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
-    maxAltOffset: 0,
-  },
-  marginHorizontal: {
-    min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
+    max: ['capWidth', 'thicknessHorizontal'],
+    maxOffset: 400,
     maxAltOffset: 0,
   },
   thicknessVertical: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
+    max: ['capHeight', 'stemHeight', 'marginVertical'],
+    maxOffset: 100,
     maxAltOffset: 0,
   },
   thicknessHorizontal: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
+    max: ['capWidth', 'marginHorizontal'],
+    maxOffset: 400,
     maxAltOffset: 0,
   },
   stemHeight: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
+    max: ['capHeight', 'thicknessVertical', 'marginVertical'],
+    maxOffset: 100,
     maxAltOffset: 0,
   },
   stemWidth: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
-    maxOffset: 0,
+    max: ['-capWidth', 'cellWidth'],
+    maxOffset: 300,
     maxAltOffset: 0,
   },
   capWidth: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    max: ['thicknessHorizontal'], // TODO: needs some thinking
     maxOffset: 0,
     maxAltOffset: 0,
   },
   capHeight: {
     min: 0,
-    max: ['innerThicknessVertical', 'innerMarginVertical', 'outerThicknessVertical'],
+    max: ['marginVertical', 'thicknessVertical', 'stemHeight'],
     maxOffset: 0,
     maxAltOffset: 0,
   },
@@ -70,10 +67,11 @@ const constraints = {
 
 
 const getOuterArray = (params) => {
-  params = Object.assign(params, {
+  params = {
+    ...params,
     outerWidth: params.cellWidth - params.marginHorizontal - params.marginHorizontal,
     outerHeight: params.cellHeight - params.marginVertical - params.marginVertical,
-  });
+  }
 
   // LEGEND:
   // [y|x]      ->  y axis | x axis
@@ -81,7 +79,7 @@ const getOuterArray = (params) => {
   const yt = params.cellHeight / 2 - params.marginVertical,
         yb = -params.cellHeight / 2 + params.marginVertical,
         xr = params.cellWidth / 2 - params.marginHorizontal,
-        xl = -params.cellWidth / 2 + params.marginHorizontal;
+        xl = -params.cellWidth / 2 + params.marginHorizontal
 
   return [
     [xl, yb],
@@ -89,19 +87,20 @@ const getOuterArray = (params) => {
     [xr, yt],
     [xl, yt],
     [xl, yb],
-  ];
-};
+  ]
+}
 
 
 const getInnerArray = (params) => {
-  params = Object.assign(params, {
+  params = {
+    ...params,
     width: params.outerWidth - params.marginHorizontal - params.marginHorizontal,
     height: params.outerHeight - params.marginVertical - params.marginVertical,
     offsetTop: params.cellHeight / 2 - params.marginVertical - params.thicknessVertical,
     offsetRight: params.cellWidth / 2 - params.marginHorizontal - params.thicknessHorizontal,
     offsetBottom: -params.cellHeight / 2 + params.marginVertical + params.thicknessVertical,
     offsetLeft: -params.cellWidth / 2 + params.marginHorizontal + params.thicknessHorizontal,
-  });
+  }
 
   // LEGEND:
   // [y|x]      ->  y axis | x axis
@@ -131,7 +130,7 @@ const getInnerArray = (params) => {
         yct = yst - params.capHeight,
         ycb = ysb + params.capHeight,
         xcbr = params.capWidth / 2,
-        xcbl = -params.capWidth / 2;
+        xcbl = -params.capWidth / 2
 
   return [
     [xl, yb],
@@ -155,13 +154,16 @@ const getInnerArray = (params) => {
     [xstl, yt],
     [xl, yt],
     [xl, yb],
-  ];
-};
-
-
-const download = () => {
-
+  ]
 }
+
+
+const download = (shapes) => `
+  ${getMacroHeader()}
+  ${shapes.map(shape => getMacroLine(shape))}
+  ${getMacroFooter()}
+`
+
 
 export default {
   name: 'oscillator',

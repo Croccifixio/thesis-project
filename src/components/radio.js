@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import prettify from '../modules/helpers/prettify'
+import { prettify } from '../modules/helpers'
 
 
 const radio = (name, index) => html`

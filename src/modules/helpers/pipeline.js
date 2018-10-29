@@ -1,5 +1,3 @@
-const pipeline = (...fns) =>
+export const pipeline = (...fns) =>
   (value) =>
-    fns.reduce((acc, fn) => fn(acc), value);
-
-export default pipeline;
+    fns.reduce((acc, fn) => fn(acc), value)

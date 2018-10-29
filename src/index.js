@@ -1,21 +1,22 @@
-import style from './assets/styles/main.scss';
-import { html, render, svg } from 'lit-html';
-import { repeat } from 'lit-html/lib/repeat';
+import style from './assets/styles/main.scss'
+import { html, render, svg } from 'lit-html'
+import { repeat } from 'lit-html/lib/repeat'
 
 // Components
-import input from './components/input';
-import radio from './components/radio';
+import input from './components/input'
+import radio from './components/radio'
 
 // Helpers
-import pipeline from './modules/helpers/pipeline';
-import keycodes from './modules/helpers/keycodes';
-import { round } from './modules/helpers/math';
+import { getConstraint, keycodes, pipeline, round } from './modules/helpers'
 
 // Shapes
-import { borderParams, getBorderArray } from './modules/shapes/border';
-// import { crossParams as shapeParams, getOuterCrossArray as getOuterShapeArray } from './modules/shapes/cross';
-import squareRing from './modules/shapes/square-ring';
-import oscillator from './modules/shapes/oscillator';
+import { borderParams, getBorderArray } from './modules/shapes/border'
+// import { crossParams as shapeParams, getOuterCrossArray as getOuterShapeArray } from './modules/shapes/cross'
+import squareRing from './modules/shapes/square-ring'
+import oscillator from './modules/shapes/oscillator'
+
+
+const DOWNLOAD_SCALE = 0.001
 
 
 class Shape {
@@ -23,14 +24,14 @@ class Shape {
     this.cells = [
       oscillator,
       squareRing,
-    ];
-    this.currentCell = this.cells[0];
-    this.initialParams = { ...borderParams, ...this.currentCell.params };
-    this.currentParams = this.initialParams;
-    this.constraints = this.currentCell.constraints;
-    this.svgNode = document.querySelector('#svg');
-    this.cellParametersNode = document.querySelector('#cell-parameters');
-    this.cellSelectorNode = document.querySelector('#cell-selector');
+    ]
+    this.currentCell = this.cells[0]
+    this.initialParams = { ...borderParams, ...this.currentCell.params }
+    this.currentParams = this.initialParams
+    this.constraints = this.currentCell.constraints
+    this.svgNode = document.querySelector('#svg')
+    this.cellParametersNode = document.querySelector('#cell-parameters')
+    this.cellSelectorNode = document.querySelector('#cell-selector')
   }
 
 
@@ -46,7 +47,7 @@ class Shape {
       <div class="radios">
         ${this.cells.map(({ name }, index) => radio(name, index))}
       </div>
-    `;
+    `
   }
 
 
@@ -57,14 +58,14 @@ class Shape {
    * @memberof Shape
    */
   getCellParameterMarkup() {
-    const params = Object.keys(this.currentParams);
+    const params = Object.keys(this.currentParams)
 
     return html`
       ${params
         .filter(param => param !== 'cellHeight' && param !== 'cellWidth')
         .map(param => input(param, this.currentParams))
       }
-    `;
+    `
   }
 
 
@@ -74,20 +75,20 @@ class Shape {
    * @memberof Shape
    */
   bindCellSelector() {
-    const radios = document.querySelectorAll('#cell-selector input[type="radio"]');
+    const radios = document.querySelectorAll('#cell-selector input[type="radio"]')
 
     radios.forEach((radio) => {
       radio.addEventListener('change', () => {
         if (radio.checked) {
-          this.unbindCellParameters();
-          this.currentCell = this.cells[radio.value];
-          this.currentParams = { ...borderParams, ...this.currentCell.params };
-          this.constraints = this.currentCell.constraints;
-          this.renderParameterInputs();
-          this.renderAntenna();
-          this.bindCellParameters();
+          this.unbindCellParameters()
+          this.currentCell = this.cells[radio.value]
+          this.currentParams = { ...borderParams, ...this.currentCell.params }
+          this.constraints = this.currentCell.constraints
+          this.renderParameterInputs()
+          this.renderAntenna()
+          this.bindCellParameters()
         }
-      });
+      })
     })
   }
 
@@ -98,30 +99,29 @@ class Shape {
    * @memberof Shape
    */
   bindCellParameters() {
-    const inputs = document.querySelectorAll('input[type="number"]');
+    const inputs = document.querySelectorAll('input[type="number"]')
 
     inputs.forEach((input) => {
       input.addEventListener('keydown', (e) => {
-        e.preventDefault();
+        if (!Object.values(keycodes).includes(e.which)) return
 
-        if (!Object.values(keycodes).includes(e.which)) return;
-
-        const parameterName = input.getAttribute('name');
-        let parameterValue = parseFloat(input.value * 1000);
+        e.preventDefault()
+        const parameterName = input.getAttribute('name')
+        let parameterValue = parseFloat(input.value * 1000)
 
         if (e.which === keycodes.upArrow) {
-          if (!this.checkMaxConstraints(parameterName, parameterValue)) return;
-          parameterValue += 100;
+          if (!this.checkMaxConstraints(parameterName, parameterValue)) return
+          parameterValue += 100
         } else if (e.which === keycodes.downArrow) {
-          if (!this.checkMinConstraints(parameterName, parameterValue)) return;
-          parameterValue -= 100;
+          if (!this.checkMinConstraints(parameterName, parameterValue)) return
+          parameterValue -= 100
         }
 
-        input.value = round(parameterValue / 1000, 5);
-        this.currentParams[parameterName] = parameterValue;
-        this.renderAntenna();
-      });
-    });
+        input.value = round(parameterValue / 1000, 5)
+        this.currentParams[parameterName] = parameterValue
+        this.renderAntenna()
+      })
+    })
   }
 
 
@@ -135,30 +135,35 @@ class Shape {
    * @memberof Shape
    */
   checkMaxConstraints(parameterName, parameterValue) {
-    let fit = 0;
-    if (parameterName.endsWith('Horizontal')) fit = this.currentParams['cellWidth'] / 2;
-    if (parameterName.endsWith('Vertical')) fit = this.currentParams['cellHeight'] / 2 - 300;
+    let fit = 0
+    if (parameterName.endsWith('Horizontal') || parameterName.endsWith('Width')) fit = this.currentParams['cellWidth'] / 2
+    if (parameterName.endsWith('Vertical') || parameterName.endsWith('Height')) fit = this.currentParams['cellHeight'] / 2 - 300
 
     const rawConstraint = (this.constraints[parameterName].max
-      ? this.constraints[parameterName].max.reduce((acc, cur) => {
-          if (cur.includes('Gap')) return acc + this.currentParams[cur] / 2;
-          return acc + this.currentParams[cur];
-        }, 0)
-      : 0);
+      ? getConstraint(this.constraints[parameterName], this.currentParams)
+      : 0)
 
     const rawConstraintAlt = (this.constraints[parameterName].maxAlt
       ? this.constraints[parameterName].maxAlt.reduce((acc, cur) => {
-          if (cur.includes('Gap')) return acc + this.currentParams[cur] / 2;
-          return acc + this.currentParams[cur];
+          if (cur.includes('Gap')) return acc + this.currentParams[cur] / 2
+          return acc + this.currentParams[cur]
         }, 0)
-      : 0);
+      : 0)
 
-    const constraint = fit - rawConstraint - this.constraints[parameterName].maxOffset;
-    const constraintAlt = fit - rawConstraintAlt - this.constraints[parameterName].maxAltOffset;
+    const constraint = fit - rawConstraint - this.constraints[parameterName].maxOffset
+    const constraintAlt = fit - rawConstraintAlt - this.constraints[parameterName].maxAltOffset
 
-    if (rawConstraintAlt && constraintAlt < constraint) return (parameterValue - constraintAlt <= 100);
-    if (parameterName.includes('Gap')) return (parameterValue - constraint * 2 <= 100);
-    return (parameterValue - constraint <= 100);
+    console.group()
+    console.log('fit =>', fit)
+    console.log('parameterName =>', parameterName)
+    console.log('this.constraints[parameterName] =>', this.constraints[parameterName])
+    console.log('rawConstraint =>', rawConstraint)
+    console.log('constraint =>', constraint)
+    console.groupEnd()
+
+    if (rawConstraintAlt && constraintAlt < constraint) return (parameterValue - constraintAlt <= 100)
+    if (parameterName.includes('Gap')) return (parameterValue - constraint * 2 <= 100)
+    return (parameterValue - constraint <= 100)
   }
 
 
@@ -171,7 +176,7 @@ class Shape {
    * @memberof Shape
    */
   checkMinConstraints(parameterName, parameterValue) {
-    return (parameterValue - this.constraints[parameterName].min > 100);
+    return (parameterValue - this.constraints[parameterName].min > 100)
   }
 
 
@@ -181,11 +186,11 @@ class Shape {
    * @memberof Shape
    */
   unbindCellParameters() {
-    const inputs = document.querySelectorAll('input[type="number"]');
+    const inputs = document.querySelectorAll('input[type="number"]')
 
     inputs.forEach((input) => {
-      input.removeEventListener('change', () => {});
-    });
+      input.removeEventListener('change', () => {})
+    })
   }
 
 
@@ -197,14 +202,14 @@ class Shape {
    * @memberof Shape
    */
   scaleParameters(scale) {
-    let scaledParameters = {};
-    const parameterNames = Object.keys(this.currentParams);
-    const parameterValues = Object.values(this.currentParams);
+    let scaledParameters = {}
+    const parameterNames = Object.keys(this.currentParams)
+    const parameterValues = Object.values(this.currentParams)
     parameterNames.forEach((parameterName, index) => {
-      scaledParameters[parameterNames[index]] = scale * parameterValues[index];
-    });
+      scaledParameters[parameterNames[index]] = scale * parameterValues[index]
+    })
 
-    return scaledParameters;
+    return scaledParameters
   }
 
 
@@ -216,7 +221,7 @@ class Shape {
    * @memberof Shape
    */
   shiftPoints(points) {
-    return points.map((point) => [point[0] + 50, point[1] + 50]);
+    return points.map((point) => [point[0] + 50, point[1] + 50])
   }
 
 
@@ -232,7 +237,7 @@ class Shape {
       (index !== points.length - 1)
         ? `${acc} ${point[0]},${point[1]}`
         : acc
-      , '');
+      , '')
   }
 
 
@@ -244,12 +249,14 @@ class Shape {
    * @memberof Shape
    */
   flattenPointsForDownload(points) {
-    return points.map((point) => `${point[0]} ${point[1]}`);
+    // TODO: uncomment if export function changes its implementation
+    // return points.map((point) => `${point[0]} ${point[1]}`)
+    return points
   }
 
 
   /**
-   * Flips the sign of y coordinates
+  //  * Flips the sign of y coordinates
    *
    * @memberof Shape
    */
@@ -264,19 +271,20 @@ class Shape {
    * @memberof Shape
    */
   downloadListener() {
-    const downloadButton = document.querySelector('.download');
+    const downloadButton = document.querySelector('.download')
     downloadButton.addEventListener('click', () => {
-      const textarea = document.createElement("textarea");
-      textarea.textContent = this.downloadCell();
-      textarea.style.position = "fixed";
-      document.body.appendChild(textarea);
-      textarea.select();
+      const textarea = document.createElement("textarea")
+      textarea.textContent = this.downloadCell()
+      textarea.style.position = "fixed"
+      document.body.appendChild(textarea)
+      textarea.select()
+      console.log('copied =>', textarea.textContent)
       try {
-        return document.execCommand('copy');
+        return document.execCommand('copy')
       } catch (e) {
-        console.error(e);
+        console.error(e)
       } finally {
-        document.body.removeChild(textarea);
+        document.body.removeChild(textarea)
       }
     })
   }
@@ -289,10 +297,9 @@ class Shape {
    */
   downloadCell() {
     const shapeArrays = this.currentCell.shapes.map((shape) => {
-      return pipeline(shape.points, this.flipYCoords, this.flattenPointsForDownload)(this.scaleParameters(.001));
-    });
-    // TODO: Save as file
-    //       The file should have the following contents: this.currentCell.download(...shapeArrays)
+      return pipeline(shape.points, this.flipYCoords, this.flattenPointsForDownload)(this.scaleParameters(DOWNLOAD_SCALE))
+    })
+    return this.currentCell.download(shapeArrays)
   }
 
 
@@ -303,13 +310,11 @@ class Shape {
    * @memberof Shape
    */
   getAntenna() {
-    const scale = 80 / this.initialParams['cellWidth'];
-    const scaledParameters = this.scaleParameters(scale);
-    const substrate = pipeline(getBorderArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters);
-    // const shape1 = pipeline(getOuterShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters);
-    // const shape2 = pipeline(getInnerShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters);
-
-    this.downloadCell();
+    const scale = 80 / this.initialParams['cellWidth']
+    const scaledParameters = this.scaleParameters(scale)
+    const substrate = pipeline(getBorderArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
+    // const shape1 = pipeline(getOuterShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
+    // const shape2 = pipeline(getInnerShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
 
     return svg`
       <g>
@@ -322,7 +327,7 @@ class Shape {
           `
         )}
       </g>
-    `;
+    `
   }
 
 
@@ -332,7 +337,7 @@ class Shape {
    * @memberof Shape
    */
   renderAntenna() {
-    render(this.getAntenna(), this.svgNode);
+    render(this.getAntenna(), this.svgNode)
   }
 
 
@@ -343,7 +348,7 @@ class Shape {
    * @memberof Shape
    */
   renderCellSelector() {
-    render(this.getCellSelectorMarkup(), this.cellSelectorNode);
+    render(this.getCellSelectorMarkup(), this.cellSelectorNode)
   }
 
 
@@ -353,19 +358,19 @@ class Shape {
    * @memberof Shape
    */
   renderParameterInputs() {
-    render(this.getCellParameterMarkup(), this.cellParametersNode);
+    render(this.getCellParameterMarkup(), this.cellParametersNode)
   }
 
 
   init() {
-    this.renderCellSelector();
-    this.renderParameterInputs();
-    this.renderAntenna();
-    this.bindCellSelector();
-    this.bindCellParameters();
-    this.downloadListener();
+    this.renderCellSelector()
+    this.renderParameterInputs()
+    this.renderAntenna()
+    this.bindCellSelector()
+    this.bindCellParameters()
+    this.downloadListener()
   }
 }
 
-const shape = new Shape();
-shape.init();
+const shape = new Shape()
+shape.init()

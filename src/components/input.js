@@ -1,6 +1,5 @@
 import { html } from 'lit-html';
-import prettify from '../modules/helpers/prettify'
-import { round } from '../modules/helpers/math';
+import { prettify, round } from '../modules/helpers';
 
 
 const input = (param, initialParams) => html`
