@@ -285,7 +285,7 @@ class Shape {
     const shapeArrays = this.currentCell.shapes.map((shape) => {
       return pipeline(shape.points, this.flipYCoords)(this.scaleParameters(DOWNLOAD_SCALE))
     })
-    return this.currentCell.download(shapeArrays)
+    return this.currentCell.download(this.currentCell.name, shapeArrays)
   }
 
 
