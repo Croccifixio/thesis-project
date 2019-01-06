@@ -23,8 +23,8 @@ export const getMacroHeader = () => `
     App.getActiveProject().getMaterialList().addMaterial( pmc )
   }());
 
+  var substrate = new Material();
   (function defineSubstrateMaterial() {
-    var substrate = new Material()
     substrate.name = "substrate"
 
     var substratePhysicalMaterial = new PhysicalMaterial()
@@ -53,22 +53,37 @@ export const getMacroHeader = () => `
   var conductor = new Sketch();
 `
 
-export const getMacroFooter = (name) => `
-  (function renderConductor(conductor) {
+export const getMacroFooter = (name, cell) => `
+  (function renderSubstrate() {
+    var cuboid = new Cuboid( ${cell.cellWidth}, ${cell.cellHeight}, 0.001 )
+    var recipe = new Recipe
+    recipe.append( cuboid )
+    var model = new Model()
+    model.setRecipe( recipe )
+    model.name = "substrate"
+    model.getCoordinateSystem().translate(new Cartesian3D( 0.0, 0.0, 0.0001 ))
+
+    var substrateModel = App.getActiveProject().getGeometryAssembly().append( model )
+    var substrateMaterial = App.getActiveProject().getMaterialList().getMaterial( 'substrate' )
+
+    App.getActiveProject().setMaterial( substrateModel, substrateMaterial )
+  }());
+
+  (function renderConductor( conductor ) {
     var depth = 0.0001
-    var extrude = Extrude(conductor, depth)
+    var extrude = Extrude( conductor, depth )
     var recipe = new Recipe()
-    recipe.append(extrude)
-    var conductorModel = new Model()
-    conductorModel.setRecipe(recipe)
-    conductorModel.name = "${name}"
+    recipe.append( extrude )
+    var model = new Model()
+    model.setRecipe( recipe )
+    model.name = "${name}"
 
-    var conductorModel = App.getActiveProject().getGeometryAssembly().append(conductorModel)
-    var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial('PMC')
+    var conductorModel = App.getActiveProject().getGeometryAssembly().append( model )
+    var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PMC' )
 
-    App.getActiveProject().setMaterial(conductorModel, conductorMaterial)
-    App.getActiveProject().getGeometryAssembly().append(conductor)
-  }(conductor));
+    App.getActiveProject().setMaterial( conductorModel, conductorMaterial )
+    App.getActiveProject().getGeometryAssembly().append( conductor )
+  }( conductor ));
 
   View.zoomToExtents();
 `
@@ -78,5 +93,5 @@ export const getMacroLine = (shape) => shape.map((points, index) =>
 
 
 const drawGeometricLine = (shape, points, index) => `
-  conductor.addEdge( new Line(new Cartesian3D(${points[0] / 1000}, ${points[1] / 1000}, 0), new Cartesian3D(${shape[index + 1][0] / 1000}, ${shape[index + 1][1] / 1000}, 0)) );
+  conductor.addEdge( new Line(new Cartesian3D(${points[0]}, ${points[1]}, 0), new Cartesian3D(${shape[index + 1][0]}, ${shape[index + 1][1]}, 0)) );
 `

@@ -16,7 +16,7 @@ import squareRing from './modules/shapes/square-ring'
 import oscillator from './modules/shapes/oscillator'
 
 
-const DOWNLOAD_SCALE = 0.001
+const DOWNLOAD_SCALE = 0.000001
 
 
 class Shape {
@@ -197,14 +197,15 @@ class Shape {
   /**
    * Scales the parameters to fit the shape in the SVG
    *
+   * @param {object} parameters
    * @param {float} scale
    * @returns
    * @memberof Shape
    */
-  scaleParameters(scale) {
+  scaleParameters(parameters, scale) {
     let scaledParameters = {}
-    const parameterNames = Object.keys(this.currentParams)
-    const parameterValues = Object.values(this.currentParams)
+    const parameterNames = Object.keys(parameters)
+    const parameterValues = Object.values(parameters)
     parameterNames.forEach((parameterName, index) => {
       scaledParameters[parameterNames[index]] = scale * parameterValues[index]
     })
@@ -282,10 +283,11 @@ class Shape {
    * @memberof Shape
    */
   downloadCell() {
+    const scaledBorderParams = this.scaleParameters(borderParams, DOWNLOAD_SCALE)
     const shapeArrays = this.currentCell.shapes.map((shape) => {
-      return pipeline(shape.points, this.flipYCoords)(this.scaleParameters(DOWNLOAD_SCALE))
+      return pipeline(shape.points, this.flipYCoords)(this.scaleParameters(this.currentParams, DOWNLOAD_SCALE))
     })
-    return this.currentCell.download(this.currentCell.name, shapeArrays)
+    return this.currentCell.download(this.currentCell.name, shapeArrays, scaledBorderParams)
   }
 
 
@@ -297,7 +299,7 @@ class Shape {
    */
   getAntenna() {
     const scale = 80 / this.initialParams['cellWidth']
-    const scaledParameters = this.scaleParameters(scale)
+    const scaledParameters = this.scaleParameters(this.currentParams, scale)
     const substrate = pipeline(getBorderArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
     // const shape1 = pipeline(getOuterShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
     // const shape2 = pipeline(getInnerShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
