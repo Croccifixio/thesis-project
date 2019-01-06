@@ -1,29 +1,27 @@
 export const getMacroHeader = () => `
   App.getActiveProject().getGeometryAssembly().clear()
   ${addMaterials()}
-  var s = new Sketch()
-  `
+  ${setFrequencyRange()}
+  var shape = new Sketch()
+`
 
 export const getMacroFooter = () => `
   var depth = 0.0001
-  var extrude = Extrude(s, depth)
+  var extrude = Extrude(shape, depth)
   var name = "ring"
 	var recipe = new Recipe()
 	recipe.append(extrude)
 	var m = new Model()
 	m.setRecipe(recipe)
 	m.name = name
-	var m = App.getActiveProject().getGeometryAssembly().append( m )
-
-  App.getActiveProject().getGeometryAssembly().append(s)
-  App.getActiveProject().getGeometryAssembly().append(s)
+	App.getActiveProject().getGeometryAssembly().append(m)
+  App.getActiveProject().getGeometryAssembly().append(shape)
   View.zoomToExtents()
 `
 
 export const getMacroLine = (shape) => shape.map((points, index) =>
-  index < (shape.length - 1) ? `
-  s.addEdge( new Line(new Cartesian3D(${points[0] / 1000}, ${points[1] / 1000}, 0), new Cartesian3D(${shape[index + 1][0] / 1000}, ${shape[index + 1][1] / 1000}, 0)) )`
-  : '').join('')
+  index < (shape.length - 1) ? drawGeometricLine(shape, points, index) : '').join('')
+
 
 
 const addMaterials = () => `
@@ -65,4 +63,13 @@ const addMaterials = () => `
     App.getActiveProject().getMaterialList().removeMaterial( substrate.name )
   }
   App.getActiveProject().getMaterialList().addMaterial( substrate )
+`
+
+const drawGeometricLine = (shape, points, index) => `
+  shape.addEdge( new Line(new Cartesian3D(${points[0] / 1000}, ${points[1] / 1000}, 0), new Cartesian3D(${shape[index + 1][0] / 1000}, ${shape[index + 1][1] / 1000}, 0)) )
+`
+
+const setFrequencyRange = () => `
+  App.getActiveProject().setUseAutomaticFrequencyRangeOfInterest(false)
+  App.getActiveProject().getUserDefinedFrequencyRangeOfInterest().set('1.5 GHz', '3.3 GHz')
 `
