@@ -242,21 +242,7 @@ class Shape {
 
 
   /**
-   * Outputs the points in an ASIC compatible format
-   *
-   * @param {array<float>} points
-   * @returns
-   * @memberof Shape
-   */
-  flattenPointsForDownload(points) {
-    // TODO: uncomment if export function changes its implementation
-    // return points.map((point) => `${point[0]} ${point[1]}`)
-    return points
-  }
-
-
-  /**
-  //  * Flips the sign of y coordinates
+   * Flips the sign of y coordinates
    *
    * @memberof Shape
    */
@@ -297,7 +283,7 @@ class Shape {
    */
   downloadCell() {
     const shapeArrays = this.currentCell.shapes.map((shape) => {
-      return pipeline(shape.points, this.flipYCoords, this.flattenPointsForDownload)(this.scaleParameters(DOWNLOAD_SCALE))
+      return pipeline(shape.points, this.flipYCoords)(this.scaleParameters(DOWNLOAD_SCALE))
     })
     return this.currentCell.download(shapeArrays)
   }
