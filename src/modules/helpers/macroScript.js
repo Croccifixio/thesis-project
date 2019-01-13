@@ -1,5 +1,20 @@
 export const getMacroHeader = () => `
+  var MIN_FREQ = '1.5 GHz'
+      MAX_FREQ = '3.3 GHz';
+
   (function clearProject() {
+		App.getActiveProject().getCircuitComponentDefinitionList().clear()
+		App.getActiveProject().getCircuitComponentList().clear()
+		App.getActiveProject().getCircuitComponentList().clear()
+		App.getActiveProject().getExternalExcitationList().clear()
+		App.getActiveProject().getFarZoneSensorList().clear()
+		App.getActiveProject().getGraphList().clear()
+		App.getActiveProject().getGrid().removeAllManualGridRegions()
+		App.getActiveProject().getMaterialList().clear()
+		App.getActiveProject().getNearFieldSensorList().clear()
+		App.getActiveProject().getSensorDataDefinitionList().clear()
+		App.getActiveProject().getWaveformList().clear()
+		App.getActiveProject().getWaveguideList().clear()
     App.getActiveProject().getGeometryAssembly().clear()
   }());
 
@@ -46,8 +61,8 @@ export const getMacroHeader = () => `
   }());
 
   (function setFrequencyRange() {
-    App.getActiveProject().setUseAutomaticFrequencyRangeOfInterest(false)
-    App.getActiveProject().getUserDefinedFrequencyRangeOfInterest().set('1.5 GHz', '3.3 GHz')
+    App.getActiveProject().setUseAutomaticFrequencyRangeOfInterest( false )
+    App.getActiveProject().getUserDefinedFrequencyRangeOfInterest().set( MIN_FREQ, MAX_FREQ )
   }());
 
   var conductor = new Sketch();
@@ -61,7 +76,7 @@ export const getMacroFooter = (name, cell) => `
     var model = new Model()
     model.setRecipe( recipe )
     model.name = "substrate"
-    model.getCoordinateSystem().translate(new Cartesian3D( 0.0, 0.0, 0.0001 ))
+    model.getCoordinateSystem().translate(new Cartesian3D( 0.0, 0.0, -0.001 ))
 
     var substrateModel = App.getActiveProject().getGeometryAssembly().append( model )
     var substrateMaterial = App.getActiveProject().getMaterialList().getMaterial( 'substrate' )
@@ -82,10 +97,49 @@ export const getMacroFooter = (name, cell) => `
     var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PMC' )
 
     App.getActiveProject().setMaterial( conductorModel, conductorMaterial )
-    App.getActiveProject().getGeometryAssembly().append( conductor )
+    //App.getActiveProject().getGeometryAssembly().append( conductor )
   }( conductor ));
 
   View.zoomToExtents();
+
+  (function createSourcePlaneWave() {
+    var planeWave = new PlaneWave()
+    var waveModel = AutomaticRangeBasedWaveformShape( "Automatic WaveForm" )
+    waveModel.name = "Automatic for "+MIN_FREQ+" to "+MAX_FREQ
+    waveForm = new Waveform( waveModel )
+    waveForm.name = "Automatic for "+MIN_FREQ+" to "+MAX_FREQ
+    planeWave.setWaveform( waveForm )
+    planeWave.name = "Plane Wave"
+    App.getActiveProject().getExternalExcitationList().addExternalExcitation( planeWave )
+  })();
+
+  (function createPlaneSensor() {
+    var sensor = new SurfaceSensor()
+    var sensorGeometry = new RectangleSurfaceGeometry()
+    var sensorDataDefinition = new SurfaceSensorDataDefinition()
+
+    sensorGeometry.getCoordinateSystem().setPrimaryAxis(0)
+    sensorGeometry.getCoordinateSystem().setSecondaryAxis(1)
+    sensorDataDefinition.name = 'Surface Sensor'
+    sensorDataDefinition.setCollectEFieldsVsTime( true )
+    sensorDataDefinition.setCollectHFieldsVsTime( true )
+    sensorGeometry.setCorner1( new Cartesian2D( '-30 mm', '-30 mm' ) )
+    sensorGeometry.setCorner2( new Cartesian2D( '30 mm', '30 mm' ) )
+    sensor.name = 'Surface Sensor'
+    sensor.setGeometry( sensorGeometry )
+    sensor.setDataDefinition( sensorDataDefinition )
+
+    App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
+  })();
+
+  (function queuePlaneWaveSimulation() {
+    //...
+  })();
+
+  (function runSimulations() {
+    App.saveCurrentProjectAs('C:\Users\Croccifixio\Downloads\xfdtd\a')
+    App.startSimulationQueue()
+  })();
 `
 
 export const getMacroLine = (shape) => shape.map((points, index) =>
