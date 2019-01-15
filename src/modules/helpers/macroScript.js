@@ -132,6 +132,18 @@ export const getMacroFooter = (name, cell) => `
     App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
   })();
 
+  (function setPeriodicBoundaries() {
+    var boundaryConditions = App.getActiveProject().getBoundaryConditions()
+    boundaryConditions.absorptionType = BoundaryConditions.Liao
+    boundaryConditions.numPMLLayers = "7"
+
+    boundaryConditions.xLowerBoundaryType = BoundaryConditions.Periodic
+    boundaryConditions.yLowerBoundaryType = BoundaryConditions.Periodic
+
+    boundaryConditions.xUpperBoundaryType = BoundaryConditions.Periodic
+    boundaryConditions.yUpperBoundaryType = BoundaryConditions.Periodic
+  })();
+
   (function queuePlaneWaveSimulation() {
     //...
   })();
