@@ -1,6 +1,6 @@
 export const getMacroHeader = () => `
-  var MIN_FREQ = '1.5 GHz'
-      MAX_FREQ = '3.3 GHz';
+  var MIN_FREQ = '5.5 GHz'
+      MAX_FREQ = '9.5 GHz';
 
   (function clearProject() {
 		App.getActiveProject().getCircuitComponentDefinitionList().clear()
@@ -18,24 +18,24 @@ export const getMacroHeader = () => `
     App.getActiveProject().getGeometryAssembly().clear()
   }());
 
-  (function definePMCMaterial() {
-    var pmc = new Material()
-    pmc.name = "PMC"
+  (function definePECMaterial() {
+    var pec = new Material()
+    pec.name = "PEC"
 
-    var pmcPhysicalMaterial = new PhysicalMaterial()
-    pmcPhysicalMaterial.setMagneticProperties( new PMC() )
-    pmcPhysicalMaterial.setElectricProperties( new ElectricFreespace() )
-    pmc.setDetails( pmcPhysicalMaterial )
+    var pecPhysicalMaterial = new PhysicalMaterial()
+    pecPhysicalMaterial.setElectricProperties( new PEC() )
+    pecPhysicalMaterial.setMagneticProperties( new MagneticFreespace() )
+    pec.setDetails( pecPhysicalMaterial )
 
-    var pmcBodyAppearance = pmc.getAppearance()
-    pmcBodyAppearance.getFaceAppearance().setColor( new Color( 205, 92, 92 ) )
-    pmcBodyAppearance.getEdgeAppearance().setColor( new Color( 246, 110, 110 ) )
-    pmcBodyAppearance.getVertexAppearance().setColor( new Color( 164, 73, 73 ) )
+    var pecBodyAppearance = pec.getAppearance()
+    pecBodyAppearance.getFaceAppearance().setColor( new Color( 205, 92, 92 ) )
+    pecBodyAppearance.getEdgeAppearance().setColor( new Color( 246, 110, 110 ) )
+    pecBodyAppearance.getVertexAppearance().setColor( new Color( 164, 73, 73 ) )
 
-    if( null != App.getActiveProject().getMaterialList().getMaterial( pmc.name ) ) {
-      App.getActiveProject().getMaterialList().removeMaterial( pmc.name )
+    if( null != App.getActiveProject().getMaterialList().getMaterial( pec.name ) ) {
+      App.getActiveProject().getMaterialList().removeMaterial( pec.name )
     }
-    App.getActiveProject().getMaterialList().addMaterial( pmc )
+    App.getActiveProject().getMaterialList().addMaterial( pec )
   }());
 
   var substrate = new Material();
@@ -94,7 +94,7 @@ export const getMacroFooter = (name, cell) => `
     model.name = "${name}"
 
     var conductorModel = App.getActiveProject().getGeometryAssembly().append( model )
-    var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PMC' )
+    var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PEC' )
 
     App.getActiveProject().setMaterial( conductorModel, conductorMaterial )
     //App.getActiveProject().getGeometryAssembly().append( conductor )
@@ -113,28 +113,44 @@ export const getMacroFooter = (name, cell) => `
     App.getActiveProject().getExternalExcitationList().addExternalExcitation( planeWave )
   })();
 
-  (function createPlaneSensor() {
-    var sensor = new SurfaceSensor()
-    var sensorGeometry = new RectangleSurfaceGeometry()
-    var sensorDataDefinition = new SurfaceSensorDataDefinition()
+  (function createPointSensor() {
+    var sensor = new PointSensor()
+    var sensorGeometry = new PointPositionGeometry()
+    var sensorDataDefinition = new PointSensorDataDefinition()
 
-    sensorGeometry.getCoordinateSystem().setPrimaryAxis(0)
-    sensorGeometry.getCoordinateSystem().setSecondaryAxis(1)
-    sensorDataDefinition.name = 'Surface Sensor'
+    sensorDataDefinition.name = 'Point Sensor Definition'
     sensorDataDefinition.setCollectEFieldsVsTime( true )
     sensorDataDefinition.setCollectHFieldsVsTime( true )
-    sensorGeometry.setCorner1( new Cartesian2D( '-30 mm', '-30 mm' ) )
-    sensorGeometry.setCorner2( new Cartesian2D( '30 mm', '30 mm' ) )
-    sensor.name = 'Surface Sensor'
+    sensorGeometry.setPosition( CoordinateSystemPosition( 0, 0, '15 mm' ) )
+    sensor.name = 'Point Sensor'
     sensor.setGeometry( sensorGeometry )
     sensor.setDataDefinition( sensorDataDefinition )
 
     App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
   })();
 
+  //(function createPlaneSensor() {
+  //  var sensor = new SurfaceSensor()
+  //  var sensorGeometry = new RectangleSurfaceGeometry()
+  //  var sensorDataDefinition = new SurfaceSensorDataDefinition()
+  //
+  //  sensorGeometry.getCoordinateSystem().setPrimaryAxis(0)
+  //  sensorGeometry.getCoordinateSystem().setSecondaryAxis(1)
+  //  sensorDataDefinition.name = 'Surface Sensor'
+  //  sensorDataDefinition.setCollectEFieldsVsTime( true )
+  //  sensorDataDefinition.setCollectHFieldsVsTime( true )
+  //  sensorGeometry.setCorner1( new Cartesian2D( '-30 mm', '-30 mm' ) )
+  //  sensorGeometry.setCorner2( new Cartesian2D( '30 mm', '30 mm' ) )
+  //  sensor.name = 'Surface Sensor'
+  //  sensor.setGeometry( sensorGeometry )
+  //  sensor.setDataDefinition( sensorDataDefinition )
+  //
+  //  App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
+  //})();
+
   (function setPeriodicBoundaries() {
     var boundaryConditions = App.getActiveProject().getBoundaryConditions()
-    boundaryConditions.absorptionType = BoundaryConditions.Liao
+    boundaryConditions.absorptionType = BoundaryConditions.PML
     boundaryConditions.numPMLLayers = "7"
 
     boundaryConditions.xLowerBoundaryType = BoundaryConditions.Periodic
@@ -144,14 +160,62 @@ export const getMacroFooter = (name, cell) => `
     boundaryConditions.yUpperBoundaryType = BoundaryConditions.Periodic
   })();
 
-  (function queuePlaneWaveSimulation() {
-    //...
+  (function createSimulation() {
+    var newSimData = App.getActiveProject().getNewSimulationData()
+    var terminationCriteria = newSimData.getTerminationCriteria()
+
+    terminationCriteria.setConvergenceThreshold(-30)
+    terminationCriteria.setMinimumSimulationTime('0.01 us')
+    terminationCriteria.setMaximumSimulationTime('0.02 us')
+    terminationCriteria.setMaximumWallClockTime('0')
+
+    newSimData.setTerminationCriteria(terminationCriteria)
+    newSimData.excitationType = NewSimulationData.ExternalExcitation
+    newSimData.getExternalExcitationList().getExternalExcitation('Plane Wave')
+
+    App.getActiveProject().createSimulation()
   })();
 
   (function runSimulations() {
-    App.saveCurrentProjectAs('C:\Users\Croccifixio\Downloads\xfdtd\a')
+    var simIds = App.getActiveProject().getSimulationIds()
+    var simId = simIds[simIds.length - 1]
+    App.saveCurrentProject()
     App.startSimulationQueue()
   })();
+
+  function readSimulationResults() {
+    var query = new ResultQuery()
+    query.projectId = query.getAvailableProjectIds()[0]
+    query.simulationId = query.getAvailableSimulationIds()[0]
+    query.runId = query.getAvailableRunIds()[0]
+    query.sensorType = ResultQuery.CircuitComponent
+    query.sensorId = query.getAvailableSensorIds()[0]
+    Output.println( ResultUtils.getComponentTable( query ) )
+    query.timeDependence = ResultQuery.Transient
+    query.resultType = ResultQuery.E
+    query.fieldScatter = ResultQuery.TotalField
+    query.resultComponent = ResultQuery.X // only y-component //VectorMagnitude
+    query.dataTransform = ResultQuery.Fft
+    query.fftSize = 16
+    query.complexPart = ResultQuery.ComplexMagnitude
+    query.surfaceInterpolationResolution = ResultQuery.NoInterpolation
+    query.setDimensionRange( "Time" , 0, '10 ms' )
+
+    Output.println("Time Dimension Max: "+query.getDimensionMax("Time"))
+
+    var result
+    result = new ResultDataSet( "" )
+    result.setQuery(query)
+  }
+
+  function waitForSimulation() {
+    App.sleep(10000)
+
+    if (!App.isSimulationQueueStarted()) readSimulationResults()
+    else waitForSimulation()
+  }
+
+  //waitForSimulation()
 `
 
 export const getMacroLine = (shape) => shape.map((points, index) =>
