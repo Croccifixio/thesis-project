@@ -85,8 +85,7 @@ export const getMacroFooter = (name, cell) => `
   }());
 
   (function renderConductor( conductor ) {
-    var depth = 0.0001
-    var extrude = Extrude( conductor, depth )
+    var extrude = Extrude( conductor, 0.0001 )
     var recipe = new Recipe()
     recipe.append( extrude )
     var model = new Model()
@@ -97,7 +96,6 @@ export const getMacroFooter = (name, cell) => `
     var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PEC' )
 
     App.getActiveProject().setMaterial( conductorModel, conductorMaterial )
-    //App.getActiveProject().getGeometryAssembly().append( conductor )
   }( conductor ));
 
   View.zoomToExtents();
@@ -160,62 +158,130 @@ export const getMacroFooter = (name, cell) => `
     boundaryConditions.yUpperBoundaryType = BoundaryConditions.Periodic
   })();
 
-  (function createSimulation() {
-    var newSimData = App.getActiveProject().getNewSimulationData()
-    var terminationCriteria = newSimData.getTerminationCriteria()
+  function renderAntenna( top ) {
+	  if (top) {
+	    var name = "transmitting antenna"
+	    var zMultiplier = 1
+	    var cutoutOffset = 0.0145
 
-    terminationCriteria.setConvergenceThreshold(-30)
-    terminationCriteria.setMinimumSimulationTime('0.01 us')
-    terminationCriteria.setMaximumSimulationTime('0.02 us')
-    terminationCriteria.setMaximumWallClockTime('0')
+      var circuitComponent = new CircuitComponent()
+      var feed = new Feed()
+      feed.setWaveform( App.getActiveProject().getWaveformList().at(0) )
+      circuitComponent.setCircuitComponentDefinition( feed )
+      circuitComponent.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, 0.0151 ) )
+      circuitComponent.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, 0.0151 ) )
+      App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
+	  } else {
+	    var name = "receiving antenna"
+	    var zMultiplier = -1
+	    var cutoutOffset = -0.0155
 
-    newSimData.setTerminationCriteria(terminationCriteria)
-    newSimData.excitationType = NewSimulationData.ExternalExcitation
-    newSimData.getExternalExcitationList().getExternalExcitation('Plane Wave')
+      var circuitComponent = new CircuitComponent()
+      var passiveLoad = new PassiveLoad()
+      var impedanceSpecification = new RLCSpecification( '50 ohm', 0, 0 )
+      passiveLoad.setImpedanceSpecification( impedanceSpecification )
+      circuitComponent.setCircuitComponentDefinition( passiveLoad )
+      circuitComponent.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, -0.0149 ) )
+      circuitComponent.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, -0.0149 ) )
+      App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
+	  }
 
-    App.getActiveProject().createSimulation()
-  })();
+	  var antenna = new Sketch();
+	  antenna.addEdge( new Arc( new Cartesian3D( 0.0, 0.0, zMultiplier * 0.015 ), 0.004, 0.0, 2*Math.PI ) );
+	  antenna.addEdge( new Arc( new Cartesian3D( 0.0, 0.0, zMultiplier * 0.015 ), 0.005, 0.0, 2*Math.PI ) );
 
-  (function runSimulations() {
-    var simIds = App.getActiveProject().getSimulationIds()
-    var simId = simIds[simIds.length - 1]
-    App.saveCurrentProject()
-    App.startSimulationQueue()
-  })();
 
-  function readSimulationResults() {
-    var query = new ResultQuery()
-    query.projectId = query.getAvailableProjectIds()[0]
-    query.simulationId = query.getAvailableSimulationIds()[0]
-    query.runId = query.getAvailableRunIds()[0]
-    query.sensorType = ResultQuery.CircuitComponent
-    query.sensorId = query.getAvailableSensorIds()[0]
-    Output.println( ResultUtils.getComponentTable( query ) )
-    query.timeDependence = ResultQuery.Transient
-    query.resultType = ResultQuery.E
-    query.fieldScatter = ResultQuery.TotalField
-    query.resultComponent = ResultQuery.X // only y-component //VectorMagnitude
-    query.dataTransform = ResultQuery.Fft
-    query.fftSize = 16
-    query.complexPart = ResultQuery.ComplexMagnitude
-    query.surfaceInterpolationResolution = ResultQuery.NoInterpolation
-    query.setDimensionRange( "Time" , 0, '10 ms' )
+    var extrude = Extrude( antenna, 0.0001 )
+    var recipe = new Recipe()
+    recipe.append( extrude )
+    var arcModel = new Model()
+    arcModel.setRecipe( recipe )
 
-    Output.println("Time Dimension Max: "+query.getDimensionMax("Time"))
 
-    var result
-    result = new ResultDataSet( "" )
-    result.setQuery(query)
+    var antennaCutout = new Cuboid( 0.001, 0.003, 0.001 )
+    var recipe = new Recipe
+    recipe.append( antennaCutout )
+    var cutoutModel = new Model()
+    cutoutModel.setRecipe( recipe )
+    cutoutModel.getCoordinateSystem().translate(new Cartesian3D( 0.0, -0.004, cutoutOffset ))
+
+
+    var boolOp = new BooleanOperation()
+    boolOp.setBlank( arcModel )
+    boolOp.setTool( cutoutModel )
+    boolOp.setBooleanType( BooleanOperation.SubtractBooleanOperation )
+
+	  recipe = new Recipe()
+	  recipe.append(boolOp)
+	  finalModel = new Model()
+	  finalModel.setRecipe(recipe)
+	  finalModel.name = name
+    var antennaModel = App.getActiveProject().getGeometryAssembly().append( finalModel )
+    var antennaMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PEC' )
+
+
+    App.getActiveProject().setMaterial( antennaModel, antennaMaterial )
   }
 
-  function waitForSimulation() {
-    App.sleep(10000)
+renderAntenna(true)
+renderAntenna(false)
 
-    if (!App.isSimulationQueueStarted()) readSimulationResults()
-    else waitForSimulation()
-  }
-
-  //waitForSimulation()
+//  (function createSimulation() {
+//    var newSimData = App.getActiveProject().getNewSimulationData()
+//    var terminationCriteria = newSimData.getTerminationCriteria()
+//
+//    terminationCriteria.setConvergenceThreshold(-30)
+//    terminationCriteria.setMinimumSimulationTime('0.01 us')
+//    terminationCriteria.setMaximumSimulationTime('0.02 us')
+//    terminationCriteria.setMaximumWallClockTime('0')
+//
+//    newSimData.setTerminationCriteria(terminationCriteria)
+//    newSimData.excitationType = NewSimulationData.ExternalExcitation
+//    newSimData.getExternalExcitationList().getExternalExcitation('Plane Wave')
+//
+//    App.getActiveProject().createSimulation()
+//  })();
+//
+//  (function runSimulations() {
+//    var simIds = App.getActiveProject().getSimulationIds()
+//    var simId = simIds[simIds.length - 1]
+//    App.saveCurrentProject()
+//    App.startSimulationQueue()
+//  })();
+//
+//  function readSimulationResults() {
+//    var query = new ResultQuery()
+//    query.projectId = query.getAvailableProjectIds()[0]
+//    query.simulationId = query.getAvailableSimulationIds()[0]
+//    query.runId = query.getAvailableRunIds()[0]
+//    query.sensorType = ResultQuery.CircuitComponent
+//    query.sensorId = query.getAvailableSensorIds()[0]
+//    Output.println( ResultUtils.getComponentTable( query ) )
+//    query.timeDependence = ResultQuery.Transient
+//    query.resultType = ResultQuery.E
+//    query.fieldScatter = ResultQuery.TotalField
+//    query.resultComponent = ResultQuery.X // only y-component //VectorMagnitude
+//    query.dataTransform = ResultQuery.Fft
+//    query.fftSize = 16
+//    query.complexPart = ResultQuery.ComplexMagnitude
+//    query.surfaceInterpolationResolution = ResultQuery.NoInterpolation
+//    query.setDimensionRange( "Time" , 0, '10 ms' )
+//
+//    Output.println("Time Dimension Max: "+query.getDimensionMax("Time"))
+//
+//    var result
+//    result = new ResultDataSet( "" )
+//    result.setQuery(query)
+//  }
+//
+//  function waitForSimulation() {
+//    App.sleep(10000)
+//
+//    if (!App.isSimulationQueueStarted()) readSimulationResults()
+//    else waitForSimulation()
+//  }
+//
+//  //waitForSimulation()
 `
 
 export const getMacroLine = (shape) => shape.map((points, index) =>
