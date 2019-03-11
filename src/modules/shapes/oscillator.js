@@ -158,7 +158,7 @@ const getInnerArray = (params) => {
 }
 
 
-const download = (name, shapes, cell) => console.log('shapes =>', shapes) || console.log('cell =>', cell) || `
+const download = (name, shapes, cell) => `
   ${getMacroHeader()}
   ${shapes.map(shape => getMacroLine(shape)).join('')}
   ${getMacroFooter(name, cell)}

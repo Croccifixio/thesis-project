@@ -22,8 +22,8 @@ const DOWNLOAD_SCALE = 0.000001
 class Shape {
   constructor() {
     this.cells = [
-      oscillator,
       squareRing,
+      oscillator,
     ]
     this.currentCell = this.cells[0]
     this.initialParams = { ...borderParams, ...this.currentCell.params }

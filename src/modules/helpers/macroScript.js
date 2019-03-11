@@ -1,8 +1,8 @@
 export const getMacroHeader = () => `
   var MIN_FREQ = '5.5 GHz'
-      MAX_FREQ = '9.5 GHz';
+      MAX_FREQ = '9.5 GHz'
 
-  (function clearProject() {
+  ;(function clearProject() {
 		App.getActiveProject().getCircuitComponentDefinitionList().clear()
 		App.getActiveProject().getCircuitComponentList().clear()
 		App.getActiveProject().getCircuitComponentList().clear()
@@ -16,9 +16,9 @@ export const getMacroHeader = () => `
 		App.getActiveProject().getWaveformList().clear()
 		App.getActiveProject().getWaveguideList().clear()
     App.getActiveProject().getGeometryAssembly().clear()
-  }());
+  }())
 
-  (function definePECMaterial() {
+  ;(function definePECMaterial() {
     var pec = new Material()
     pec.name = "PEC"
 
@@ -36,10 +36,10 @@ export const getMacroHeader = () => `
       App.getActiveProject().getMaterialList().removeMaterial( pec.name )
     }
     App.getActiveProject().getMaterialList().addMaterial( pec )
-  }());
+  }())
 
-  var substrate = new Material();
-  (function defineSubstrateMaterial() {
+  var substrate = new Material()
+  ;(function defineSubstrateMaterial() {
     substrate.name = "substrate"
 
     var substratePhysicalMaterial = new PhysicalMaterial()
@@ -58,18 +58,18 @@ export const getMacroHeader = () => `
       App.getActiveProject().getMaterialList().removeMaterial( substrate.name )
     }
     App.getActiveProject().getMaterialList().addMaterial( substrate )
-  }());
+  }())
 
-  (function setFrequencyRange() {
+  ;(function setFrequencyRange() {
     App.getActiveProject().setUseAutomaticFrequencyRangeOfInterest( false )
     App.getActiveProject().getUserDefinedFrequencyRangeOfInterest().set( MIN_FREQ, MAX_FREQ )
-  }());
+  }())
 
-  var conductor = new Sketch();
+  var conductor = new Sketch()
 `
 
 export const getMacroFooter = (name, cell) => `
-  (function renderSubstrate() {
+  ;(function renderSubstrate() {
     var cuboid = new Cuboid( ${cell.cellWidth}, ${cell.cellHeight}, 0.001 )
     var recipe = new Recipe
     recipe.append( cuboid )
@@ -82,9 +82,9 @@ export const getMacroFooter = (name, cell) => `
     var substrateMaterial = App.getActiveProject().getMaterialList().getMaterial( 'substrate' )
 
     App.getActiveProject().setMaterial( substrateModel, substrateMaterial )
-  }());
+  }())
 
-  (function renderConductor( conductor ) {
+  ;(function renderConductor( conductor ) {
     var extrude = Extrude( conductor, 0.0001 )
     var recipe = new Recipe()
     recipe.append( extrude )
@@ -96,11 +96,11 @@ export const getMacroFooter = (name, cell) => `
     var conductorMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PEC' )
 
     App.getActiveProject().setMaterial( conductorModel, conductorMaterial )
-  }( conductor ));
+  }( conductor ))
 
-  View.zoomToExtents();
+  View.zoomToExtents()
 
-  (function createSourcePlaneWave() {
+  ;(function createSourcePlaneWave() {
     var planeWave = new PlaneWave()
     var waveModel = AutomaticRangeBasedWaveformShape( "Automatic WaveForm" )
     waveModel.name = "Automatic for "+MIN_FREQ+" to "+MAX_FREQ
@@ -109,9 +109,9 @@ export const getMacroFooter = (name, cell) => `
     planeWave.setWaveform( waveForm )
     planeWave.name = "Plane Wave"
     App.getActiveProject().getExternalExcitationList().addExternalExcitation( planeWave )
-  })();
+  })()
 
-  (function createPointSensor() {
+  ;(function createPointSensor() {
     var sensor = new PointSensor()
     var sensorGeometry = new PointPositionGeometry()
     var sensorDataDefinition = new PointSensorDataDefinition()
@@ -125,9 +125,9 @@ export const getMacroFooter = (name, cell) => `
     sensor.setDataDefinition( sensorDataDefinition )
 
     App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
-  })();
+  })()
 
-  //(function createPlaneSensor() {
+  //;(function createPlaneSensor() {
   //  var sensor = new SurfaceSensor()
   //  var sensorGeometry = new RectangleSurfaceGeometry()
   //  var sensorDataDefinition = new SurfaceSensorDataDefinition()
@@ -144,9 +144,9 @@ export const getMacroFooter = (name, cell) => `
   //  sensor.setDataDefinition( sensorDataDefinition )
   //
   //  App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
-  //})();
+  //})()
 
-  (function setPeriodicBoundaries() {
+  ;(function setPeriodicBoundaries() {
     var boundaryConditions = App.getActiveProject().getBoundaryConditions()
     boundaryConditions.absorptionType = BoundaryConditions.PML
     boundaryConditions.numPMLLayers = "7"
@@ -156,17 +156,21 @@ export const getMacroFooter = (name, cell) => `
 
     boundaryConditions.xUpperBoundaryType = BoundaryConditions.Periodic
     boundaryConditions.yUpperBoundaryType = BoundaryConditions.Periodic
-  })();
+  })()
+
+  var circuitComponent = new CircuitComponent()
 
   function renderAntenna( top ) {
+    var impedanceSpecification = new RLCSpecification( '50 ohm', 0, 0 )
+
 	  if (top) {
 	    var name = "transmitting antenna"
 	    var zMultiplier = 1
 	    var cutoutOffset = 0.0145
-
-      var circuitComponent = new CircuitComponent()
       var feed = new Feed()
+
       feed.setWaveform( App.getActiveProject().getWaveformList().at(0) )
+      feed.setImpedanceSpecification( impedanceSpecification )
       circuitComponent.setCircuitComponentDefinition( feed )
       circuitComponent.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, 0.0151 ) )
       circuitComponent.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, 0.0151 ) )
@@ -174,11 +178,9 @@ export const getMacroFooter = (name, cell) => `
 	  } else {
 	    var name = "receiving antenna"
 	    var zMultiplier = -1
-	    var cutoutOffset = -0.0155
-
-      var circuitComponent = new CircuitComponent()
+      var cutoutOffset = -0.0155
       var passiveLoad = new PassiveLoad()
-      var impedanceSpecification = new RLCSpecification( '50 ohm', 0, 0 )
+
       passiveLoad.setImpedanceSpecification( impedanceSpecification )
       circuitComponent.setCircuitComponentDefinition( passiveLoad )
       circuitComponent.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, -0.0149 ) )
@@ -186,9 +188,9 @@ export const getMacroFooter = (name, cell) => `
       App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
 	  }
 
-	  var antenna = new Sketch();
-	  antenna.addEdge( new Arc( new Cartesian3D( 0.0, 0.0, zMultiplier * 0.015 ), 0.004, 0.0, 2*Math.PI ) );
-	  antenna.addEdge( new Arc( new Cartesian3D( 0.0, 0.0, zMultiplier * 0.015 ), 0.005, 0.0, 2*Math.PI ) );
+	  var antenna = new Sketch()
+	  antenna.addEdge( new Arc( new Cartesian3D( 0.0, 0.0, zMultiplier * 0.015 ), 0.004, 0.0, 2*Math.PI ) )
+	  antenna.addEdge( new Arc( new Cartesian3D( 0.0, 0.0, zMultiplier * 0.015 ), 0.005, 0.0, 2*Math.PI ) )
 
 
     var extrude = Extrude( antenna, 0.0001 )
@@ -223,36 +225,38 @@ export const getMacroFooter = (name, cell) => `
     App.getActiveProject().setMaterial( antennaModel, antennaMaterial )
   }
 
-renderAntenna(true)
-renderAntenna(false)
+  renderAntenna(true)
+  renderAntenna(false)
 
-//  (function createSimulation() {
-//    var newSimData = App.getActiveProject().getNewSimulationData()
-//    var terminationCriteria = newSimData.getTerminationCriteria()
-//
-//    terminationCriteria.setConvergenceThreshold(-30)
-//    terminationCriteria.setMinimumSimulationTime('0.01 us')
-//    terminationCriteria.setMaximumSimulationTime('0.02 us')
-//    terminationCriteria.setMaximumWallClockTime('0')
-//
-//    newSimData.setTerminationCriteria(terminationCriteria)
-//    newSimData.excitationType = NewSimulationData.ExternalExcitation
-//    newSimData.getExternalExcitationList().getExternalExcitation('Plane Wave')
-//
-//    App.getActiveProject().createSimulation()
-//  })();
-//
-//  (function runSimulations() {
-//    var simIds = App.getActiveProject().getSimulationIds()
-//    var simId = simIds[simIds.length - 1]
-//    App.saveCurrentProject()
-//    App.startSimulationQueue()
-//  })();
+  ;(function createSimulation() {
+    var newSimData = App.getActiveProject().getNewSimulationData()
+    var terminationCriteria = newSimData.getTerminationCriteria()
+
+    terminationCriteria.setConvergenceThreshold(-30)
+    terminationCriteria.setMinimumSimulationTime('0.01 us')
+    terminationCriteria.setMaximumSimulationTime('1 us')
+    terminationCriteria.setMaximumWallClockTime('0')
+
+    newSimData.setTerminationCriteria(terminationCriteria)
+    newSimData.excitationType = NewSimulationData.DiscreteSources
+    newSimData.enableSParameters = true
+    newSimData.setPortAsActive(circuitComponent)
+
+    App.getActiveProject().createSimulation(true)
+  })()
+
+  ;(function runSimulations() {
+    //var simIds = App.getActiveProject().getSimulationIds()
+    //var simId = simIds[simIds.length - 1]
+    App.saveCurrentProject()
+    App.releaseSimulationQueue()
+  })()
 //
 //  function readSimulationResults() {
 //    var query = new ResultQuery()
 //    query.projectId = query.getAvailableProjectIds()[0]
-//    query.simulationId = query.getAvailableSimulationIds()[0]
+//    var simulationIds = query.getAvailableSimulationIds()
+//    query.simulationId = simulationIds[simulationIds.length - 1]
 //    query.runId = query.getAvailableRunIds()[0]
 //    query.sensorType = ResultQuery.CircuitComponent
 //    query.sensorId = query.getAvailableSensorIds()[0]
@@ -260,7 +264,7 @@ renderAntenna(false)
 //    query.timeDependence = ResultQuery.Transient
 //    query.resultType = ResultQuery.E
 //    query.fieldScatter = ResultQuery.TotalField
-//    query.resultComponent = ResultQuery.X // only y-component //VectorMagnitude
+//    query.resultComponent = ResultQuery.X  only y-component VectorMagnitude
 //    query.dataTransform = ResultQuery.Fft
 //    query.fftSize = 16
 //    query.complexPart = ResultQuery.ComplexMagnitude
@@ -289,5 +293,5 @@ export const getMacroLine = (shape) => shape.map((points, index) =>
 
 
 const drawGeometricLine = (shape, points, index) => `
-  conductor.addEdge( new Line(new Cartesian3D(${points[0]}, ${points[1]}, 0), new Cartesian3D(${shape[index + 1][0]}, ${shape[index + 1][1]}, 0)) );
+  conductor.addEdge( new Line(new Cartesian3D(${points[0]}, ${points[1]}, 0), new Cartesian3D(${shape[index + 1][0]}, ${shape[index + 1][1]}, 0)) )
 `

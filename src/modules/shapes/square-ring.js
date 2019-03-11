@@ -1,3 +1,6 @@
+import { getMacroFooter, getMacroHeader, getMacroLine } from '../helpers'
+
+
 const params = {
   outerMarginVertical: 825,
   outerMarginHorizontal: 825,
@@ -160,11 +163,13 @@ const getInnerArray = (params) => {
 };
 
 
-const download = (name, shapes, cell) => `
-  ${getMacroHeader()}
-  ${shapes.map(shape => getMacroLine(shape)).join('')}
-  ${getMacroFooter(name, cell)}
-`
+const download = (name, shapes, cell) => {
+  return `
+    ${getMacroHeader()}
+    ${shapes.map(shape => getMacroLine(shape)).join('')}
+    ${getMacroFooter(name, cell)}
+  `
+}
 
 
 export default {
