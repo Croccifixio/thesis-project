@@ -1,6 +1,6 @@
 import style from './assets/styles/main.scss'
 import { html, render, svg } from 'lit-html'
-import { repeat } from 'lit-html/lib/repeat'
+import { repeat } from 'lit-html/directives/repeat'
 
 // Components
 import input from './components/input'
