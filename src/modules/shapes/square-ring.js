@@ -163,11 +163,11 @@ const getInnerArray = (params) => {
 };
 
 
-const download = (name, shapes, cell) => {
+const download = (name, shapes, cell, settings) => {
   return `
     ${getMacroHeader()}
     ${shapes.map(shape => getMacroLine(shape)).join('')}
-    ${getMacroFooter(name, cell)}
+    ${getMacroFooter(name, cell, settings)}
   `
 }
 

@@ -68,7 +68,7 @@ export const getMacroHeader = () => `
   var conductor = new Sketch()
 `
 
-export const getMacroFooter = (name, cell) => `
+export const getMacroFooter = (name, cell, settings) => `
   ;(function renderSubstrate() {
     var cuboid = new Cuboid( ${cell.cellWidth}, ${cell.cellHeight}, 0.001 )
     var recipe = new Recipe
@@ -238,17 +238,24 @@ export const getMacroFooter = (name, cell) => `
     terminationCriteria.setMaximumWallClockTime('0')
 
     newSimData.setTerminationCriteria(terminationCriteria)
-    newSimData.excitationType = NewSimulationData.DiscreteSources
-    newSimData.enableSParameters = true
-    newSimData.setPortAsActive(circuitComponent)
 
+    ${settings === 'S-parameters' && `
+      newSimData.excitationType = NewSimulationData.DiscreteSources
+      newSimData.enableSParameters = true
+      newSimData.setPortAsActive(circuitComponent)
+    `}
+
+    ${settings === 'FFT' && `
+      newSimData.excitationType = NewSimulationData.ExternalExcitation
+    `}
+
+    App.saveCurrentProject()
     App.getActiveProject().createSimulation(true)
   })()
 
   ;(function runSimulations() {
     //var simIds = App.getActiveProject().getSimulationIds()
     //var simId = simIds[simIds.length - 1]
-    App.saveCurrentProject()
     App.releaseSimulationQueue()
   })()
 //

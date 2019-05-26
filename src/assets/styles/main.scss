@@ -3,8 +3,7 @@
 }
 
 body {
-  background-color: #fff;
-  // background-color: #777;
+  background-color: #bbb;
 }
 
 header {
@@ -12,6 +11,13 @@ header {
   justify-content: center;
   align-items: center;
   height: 30vh;
+  form {
+    flex-basis: 0;
+    min-width: 30vw;
+    h2 {
+      text-align: center;
+    }
+  }
 }
 
 main {

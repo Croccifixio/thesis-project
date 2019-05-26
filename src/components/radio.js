@@ -2,10 +2,10 @@ import { html } from 'lit-html';
 import { prettify } from '../modules/helpers'
 
 
-const radio = (name, index) => html`
+const radio = (name, index, { pretty = true } = {}) => html`
   <div>
     <label>
-      ${prettify(name)}:
+      ${pretty ? prettify(name) : name}:
       ${index === 0
         ? html`<input
             name="cell-picker"
