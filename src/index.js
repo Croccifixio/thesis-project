@@ -7,7 +7,7 @@ import input from './components/input'
 import radio from './components/radio'
 
 // Helpers
-import { $, $$, arrToObj, getConstraint, keycodes, pipeline, round } from './modules/helpers'
+import { $, $$, arrToObj, getConstraint, keycodes, round } from './modules/helpers'
 
 // Shapes
 import { borderParams, getBorderArray } from './modules/shapes/border'
@@ -21,20 +21,18 @@ const SIMULATION_SETTINGS = arrToObj(['FFT', 'S-parameters'])
 
 
 class Shape {
-  constructor() {
-    this.cells = [
+    cells = [
       squareRing,
       oscillator,
     ]
-    this.currentCell = this.cells[0]
-    this.initialParams = { ...borderParams, ...this.currentCell.params }
-    this.currentParams = this.initialParams
-    this.constraints = this.currentCell.constraints
-    this.svgNode = $('#svg')
-    this.cellParametersNode = $('#cell-parameters')
-    this.cellSelectorNode = $('#cell-selector')
-    this.simulationSettingsNode = $('#simulation-settings')
-  }
+    currentCell = this.cells[0]
+    initialParams = { ...borderParams, ...this.currentCell.params }
+    currentParams = this.initialParams
+    constraints = this.currentCell.constraints
+    $svgNode = $('#svg')
+    $cellParametersNode = $('#cell-parameters')
+    $cellSelectorNode = $('#cell-selector')
+    $simulationSettingsNode = $('#simulation-settings')
 
 
   /**
@@ -42,14 +40,13 @@ class Shape {
    *
    * @returns
    */
-  getCellSelectorMarkup() {
-    return html`
+  getCellSelectorMarkup = () =>
+    html`
       <h2>Cell Picker</h2>
       <div class="radios">
         ${this.cells.map(({ name }, index) => radio(name, index))}
       </div>
     `
-  }
 
 
   /**
@@ -57,16 +54,14 @@ class Shape {
    *
    * @returns
    */
-  getCellParameterMarkup() {
-    const params = Object.keys(this.currentParams)
-
-    return html`
-      ${params
-        .filter(param => param !== 'cellHeight' && param !== 'cellWidth')
-        .map(param => input(param, this.currentParams))
+  getCellParameterMarkup = () =>
+    html`
+      ${this.currentParams
+        |> Object.keys
+        |> #.filter(param => param !== 'cellHeight' && param !== 'cellWidth')
+        |> #.map(param => input(param, this.currentParams))
       }
     `
-  }
 
 
   /**
@@ -74,25 +69,25 @@ class Shape {
    *
    * @returns
    */
-  getSimulationSettingsMarkup() {
-console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
-    return html`
+  getSimulationSettingsMarkup = () =>
+    html`
       <h2>Simulation Settings</h2>
       <div class="radios">
-        ${Object.values(SIMULATION_SETTINGS).map((name, index) => radio(name, index, { pretty: false }))}
+        ${SIMULATION_SETTINGS
+          |> Object.values
+          |> #.map((name, index) => radio(name, index, { pretty: false }))}
       </div>
     `
-  }
 
 
   /**
    * Listens for changes on the cell selector
    *
    */
-  bindCellSelector() {
+  bindCellSelector = () => {
     const radios = $$('#cell-selector input[type="radio"]')
 
-    radios.forEach((radio) => {
+    radios.forEach(radio => {
       radio.addEventListener('change', () => {
         if (radio.checked) {
           this.unbindCellParameters()
@@ -112,7 +107,7 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * Listens for changes on the parameter input fields
    *
    */
-  bindCellParameters() {
+  bindCellParameters = () => {
     const inputs = $$('input[type="number"]')
 
     inputs.forEach((input) => {
@@ -143,14 +138,13 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * Listens for changes in the simulation settings
    *
    */
-  bindSimulationSettings() {
+  bindSimulationSettings = () => {
     const radios = $$('#simulation-settings input[type="radio"]')
 
     radios.forEach((radio) => {
       radio.addEventListener('change', () => {
         if (radio.checked) {
           this.simulationSettings = SIMULATION_SETTINGS[radio.value]
-          console.log(`this.simulationSettings =>`, this.simulationSettings)
         }
       })
     })
@@ -164,7 +158,7 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * @param {float} parameterValue
    * @returns
    */
-  checkMaxConstraints(parameterName, parameterValue) {
+  checkMaxConstraints = (parameterName, parameterValue) => {
     let fit = 0
     if (parameterName.endsWith('Horizontal') || parameterName.endsWith('Width')) fit = this.currentParams['cellWidth'] / 2
     if (parameterName.endsWith('Vertical') || parameterName.endsWith('Height')) fit = this.currentParams['cellHeight'] / 2 - 300
@@ -204,16 +198,16 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * @param {float} parameterValue
    * @returns
    */
-  checkMinConstraints(parameterName, parameterValue) {
-    return (parameterValue - this.constraints[parameterName].min > 100)
-  }
+  checkMinConstraints = (parameterName, parameterValue) =>
+    (parameterValue - this.constraints[parameterName].min > 100)
+
 
 
   /**
    * Stops listening for changes on the parameter input fields
    *
    */
-  unbindCellParameters() {
+  unbindCellParameters = () => {
     const inputs = $$('input[type="number"]')
 
     inputs.forEach((input) => {
@@ -229,7 +223,7 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * @param {float} scale
    * @returns
    */
-  scaleParameters(parameters, scale) {
+  scaleParameters = (parameters, scale) => {
     let scaledParameters = {}
     const parameterNames = Object.keys(parameters)
     const parameterValues = Object.values(parameters)
@@ -247,8 +241,8 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * @param {array<float>} points
    * @returns
    */
-  shiftPoints(points) {
-    return points.map((point) => [point[0] + 50, point[1] + 50])
+  shiftPoints = points => {
+    return points.map(point => [point[0] + 50, point[1] + 50])
   }
 
 
@@ -258,7 +252,7 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * @param {array<float>} points
    * @returns
    */
-  flattenPointsSVG(points) {
+  flattenPointsSVG = points => {
     return points.reduce((acc, point, index) =>
       (index !== points.length - 1)
         ? `${acc} ${point[0]},${point[1]}`
@@ -271,8 +265,8 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * Flips the sign of y coordinates
    *
    */
-  flipYCoords(points) {
-    return points.map((point) => [point[0], -point[1]])
+  flipYCoords = points => {
+    return points.map(point => [point[0], -point[1]])
   }
 
 
@@ -280,7 +274,7 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * Listens for clicks on the download button
    *
    */
-  downloadListener() {
+  downloadListener = () => {
     const downloadButton = $('.download')
     downloadButton.addEventListener('click', () => {
       const textarea = document.createElement("textarea")
@@ -304,11 +298,13 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    * Saves the antenna as a file
    *
    */
-  downloadCell() {
+  downloadCell = () => {
     const scaledBorderParams = this.scaleParameters(borderParams, DOWNLOAD_SCALE)
-    const shapeArrays = this.currentCell.shapes.map((shape) => {
-      return pipeline(shape.points, this.flipYCoords)(this.scaleParameters(this.currentParams, DOWNLOAD_SCALE))
-    })
+    const shapeArrays = this.currentCell.shapes.map(shape =>
+      this.scaleParameters(this.currentParams, DOWNLOAD_SCALE)
+      |> shape.points
+      |> this.flipYCoords(#)
+    )
     return this.currentCell.download(this.currentCell.name, shapeArrays, scaledBorderParams, this.simulationSettings)
   }
 
@@ -318,21 +314,29 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
    *
    * @returns
    */
-  getAntenna() {
+  getAntenna = () => {
     const scale = 80 / this.initialParams['cellWidth']
     const scaledParameters = this.scaleParameters(this.currentParams, scale)
-    const substrate = pipeline(getBorderArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
-    // const shape1 = pipeline(getOuterShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
-    // const shape2 = pipeline(getInnerShapeArray, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)
+    const substrate = scaledParameters
+      |> getBorderArray
+      |> this.shiftPoints(#)
+      |> this.flattenPointsSVG(#)
 
     return svg`
       <g>
         <polygon class="substrate" points="${substrate}" />
         ${repeat(
           this.currentCell.shapes,
-          (shape) => shape.id,
-          (shape) => svg`
-            <polygon class="${ shape.inverse ? 'inverse' : 'metal' }" points=${pipeline(shape.points, this.shiftPoints, this.flattenPointsSVG)(scaledParameters)} />
+          shape => shape.id,
+          shape => svg`
+            <polygon
+              class="${ shape.inverse ? 'inverse' : 'metal'}"
+              points=${scaledParameters
+                |> shape.points
+                |> this.shiftPoints(#)
+                |> this.flattenPointsSVG(#)
+              }
+            />
           `
         )}
       </g>
@@ -340,27 +344,27 @@ console.log(`SIMULATION_SETTINGS =>`, SIMULATION_SETTINGS)
   }
 
 
-  renderAntenna() {
-    render(this.getAntenna(), this.svgNode)
+  renderAntenna = () => {
+    render(this.getAntenna(), this.$svgNode)
   }
 
 
-  renderCellSelector() {
-    render(this.getCellSelectorMarkup(), this.cellSelectorNode)
+  renderCellSelector = () => {
+    render(this.getCellSelectorMarkup(), this.$cellSelectorNode)
   }
 
 
-  renderSimulationSettings() {
-    render(this.getSimulationSettingsMarkup(), this.simulationSettingsNode)
+  renderSimulationSettings = () => {
+    render(this.getSimulationSettingsMarkup(), this.$simulationSettingsNode)
   }
 
 
-  renderParameterInputs() {
-    render(this.getCellParameterMarkup(), this.cellParametersNode)
+  renderParameterInputs = () => {
+    render(this.getCellParameterMarkup(), this.$cellParametersNode)
   }
 
 
-  init() {
+  init = () => {
     this.renderCellSelector()
     this.renderSimulationSettings()
     this.renderParameterInputs()

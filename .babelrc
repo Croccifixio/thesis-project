@@ -2,8 +2,8 @@
   "presets": [
     "@babel/preset-env"
   ],
-  // "plugins": [
-  //   "transform-object-rest-spread",
-  //   "transform-async-to-generator"
-  // ]
+  "plugins": [
+    ["@babel/plugin-proposal-class-properties", {"loose": "true"}],
+    ["@babel/plugin-proposal-pipeline-operator", {"proposal": "smart"}]
+  ]
 }
