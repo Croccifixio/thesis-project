@@ -106,7 +106,7 @@ const getInnerArray = (params) => {
   // [y|x]      ->  y axis | x axis
   // [t|r|b|l]  ->  top | right | bottom | left
   //
-  // [y|x]  -9>  y axis | x axis
+  // [y|x]  ->  y axis | x axis
   // [s|c]  ->  stem | cap
   // [t|b]  ->  top | bottom
   //
