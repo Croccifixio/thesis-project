@@ -1,6 +1,8 @@
-import style from './assets/styles/main.scss'
 import { html, render, svg } from 'lit-html'
 import { repeat } from 'lit-html/directives/repeat'
+import omit from 'lodash.omit'
+
+import style from './assets/styles/main.scss'
 
 // Components
 import input from './components/input'
@@ -17,7 +19,9 @@ import oscillator from './modules/shapes/oscillator'
 
 
 const DOWNLOAD_SCALE = 0.000001
+const INPUT_EVENTS = ['blur', 'keyup', 'mouseup']
 const SIMULATION_SETTINGS = arrToObj(['FFT', 'S-parameters'])
+const STEP_SIZE = 100
 
 
 class Shape {
@@ -61,7 +65,7 @@ class Shape {
       ${this.currentParams
         |> Object.keys
         |> #.filter(param => param !== 'cellHeight' && param !== 'cellWidth')
-        |> #.map(param => input(param, this.currentParams))
+        |> #.map(param => input(param, this.currentParams, STEP_SIZE, this.getMinConstraint(param), this.getMaxConstraint(param)))
       }
     `
 
@@ -115,27 +119,43 @@ class Shape {
     const inputs = $$('input[type="number"]')
 
     inputs.forEach((input) => {
-      input.addEventListener('keydown', (e) => {
-        if (!Object.values(keycodes).includes(e.which)) return
-
-        e.preventDefault()
-        const parameterName = input.getAttribute('name')
-        let parameterValue = parseFloat(input.value * 1000)
-
-        if (e.which === keycodes.upArrow) {
-          if (!this.checkMaxConstraints(parameterName, parameterValue)) return
-          parameterValue += 100
-        } else if (e.which === keycodes.downArrow) {
-          if (!this.checkMinConstraints(parameterName, parameterValue)) return
-          parameterValue -= 100
-        }
-
-        input.value = round(parameterValue / 1000, 5)
-        this.currentParams[parameterName] = parameterValue
-        this.renderAntenna()
+      INPUT_EVENTS.forEach(eventType => {
+        input.addEventListener(eventType, () => {
+          this.updateCellParameters(input)
+        })
       })
     })
   }
+
+  /**
+   * Updates the cell parameters
+   *
+   * @param {node} input
+   */
+  updateCellParameters = (input) => {
+    const parameterName = input.getAttribute('name')
+    let parameterValue = parseFloat(input.value * 1000)
+
+    if (!this.checkValidity(input)) {
+      input.classList.add('invalid')
+      return
+    }
+
+    input.classList.remove('invalid')
+    this.currentParams[parameterName] = parameterValue
+    this.renderAntenna()
+  }
+
+  /**
+   * Checks if the provided input is valid
+   *
+   * @param {node} input
+   * @returns {boolean}
+   */
+  checkValidity = (input) => input.validity
+    |> omit(#, ['stepMismatch', 'Symbol(Symbol.toStringTag)', 'valid'])
+    |> Object.values
+    |> #.every(value => value === false)
 
 
   /**
@@ -156,13 +176,13 @@ class Shape {
 
 
   /**
-   * Checks if the parameter can be increased
+   * Gets the maximum value of the parameter
    *
    * @param {string} parameterName
    * @param {float} parameterValue
-   * @returns
+   * @returns {float}
    */
-  checkMaxConstraints = (parameterName, parameterValue) => {
+  getMaxConstraint = (parameterName) => {
     let fit = 0
     if (parameterName.endsWith('Horizontal') || parameterName.endsWith('Width')) fit = this.currentParams['cellWidth'] / 2
     if (parameterName.endsWith('Vertical') || parameterName.endsWith('Height')) fit = this.currentParams['cellHeight'] / 2 - 300
@@ -181,30 +201,21 @@ class Shape {
     const constraint = fit - rawConstraint - this.constraints[parameterName].maxOffset
     const constraintAlt = fit - rawConstraintAlt - this.constraints[parameterName].maxAltOffset
 
-    console.group()
-    console.log('fit =>', fit)
-    console.log('parameterName =>', parameterName)
-    console.log('this.constraints[parameterName] =>', this.constraints[parameterName])
-    console.log('rawConstraint =>', rawConstraint)
-    console.log('constraint =>', constraint)
-    console.groupEnd()
-
-    if (rawConstraintAlt && constraintAlt < constraint) return (parameterValue - constraintAlt <= 100)
-    if (parameterName.includes('Gap')) return (parameterValue - constraint * 2 <= 100)
-    return (parameterValue - constraint <= 100)
+    return (rawConstraintAlt && constraintAlt < constraint)
+      ? constraintAlt
+      : (parameterName.includes('Gap'))
+      ? constraint * 2
+      : constraint
   }
 
 
   /**
-   * Checks if the parameter can be decreased
+   * Gets the minimum value of the parameter
    *
    * @param {string} parameterName
-   * @param {float} parameterValue
-   * @returns
+   * @returns {float}
    */
-  checkMinConstraints = (parameterName, parameterValue) =>
-    (parameterValue - this.constraints[parameterName].min > 100)
-
+  getMinConstraint = (parameterName) => this.constraints[parameterName].min
 
 
   /**
@@ -225,7 +236,7 @@ class Shape {
    *
    * @param {object} parameters
    * @param {float} scale
-   * @returns
+   * @returns {object}
    */
   scaleParameters = (parameters, scale) => {
     let scaledParameters = {}
@@ -242,8 +253,8 @@ class Shape {
   /**
    * Centers the points in the SVG
    *
-   * @param {array<float>} points
-   * @returns
+   * @param {float[]} points
+   * @returns {float[]}
    */
   shiftPoints = points => {
     return points.map(point => [point[0] + 50, point[1] + 50])
@@ -253,8 +264,8 @@ class Shape {
   /**
    * Outputs the points in an SVG compatible format
    *
-   * @param {array<float>} points
-   * @returns
+   * @param {float[]} points
+   * @returns {float[]}
    */
   flattenPointsSVG = points => {
     return points.reduce((acc, point, index) =>
@@ -268,6 +279,8 @@ class Shape {
   /**
    * Flips the sign of y coordinates
    *
+   * @param {float[]} points
+   * @returns {float[]}
    */
   flipYCoords = points => {
     return points.map(point => [point[0], -point[1]])
