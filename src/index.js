@@ -42,9 +42,11 @@ class Shape {
    */
   getCellSelectorMarkup = () =>
     html`
-      <h2>Cell Picker</h2>
-      <div class="radios">
-        ${this.cells.map(({ name }, index) => radio(name, index))}
+      <div>
+        <h2>Cell Picker</h2>
+        <div class="radios">
+          ${this.cells.map(({ name }, index) => radio(name, index, { pretty: false }))}
+        </div>
       </div>
     `
 
@@ -71,11 +73,13 @@ class Shape {
    */
   getSimulationSettingsMarkup = () =>
     html`
-      <h2>Simulation Settings</h2>
-      <div class="radios">
-        ${SIMULATION_SETTINGS
-          |> Object.values
-          |> #.map((name, index) => radio(name, index, { pretty: false }))}
+      <div>
+        <h2>Simulation Settings</h2>
+        <div class="radios">
+          ${SIMULATION_SETTINGS
+            |> Object.values
+            |> #.map((name, index) => radio(name, index, { pretty: false }))}
+        </div>
       </div>
     `
 

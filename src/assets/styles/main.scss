@@ -14,9 +14,6 @@ header {
   form {
     flex-basis: 0;
     min-width: 30vw;
-    h2 {
-      text-align: center;
-    }
   }
 }
 
@@ -28,10 +25,21 @@ main {
   margin: 0;
 }
 
-#cell-selector {
-  text-align: center;
+#cell-selector,
+#simulation-settings {
+  display: flex;
+  > div {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  input {
+    margin-left: 0;
+    margin-right: 10px;
+    width: auto;
+  }
   label {
     display: inline-block;
+    text-align: left;
   }
 }
 
@@ -45,17 +53,17 @@ form label {
 }
 
 input {
-  width: 53px;
   margin-left: 15px;
   margin-bottom: 10px;
+  width: 53px;
 }
 
 svg {
+  border: 2px dashed #222;
+  box-sizing: content-box;
   stroke-width: 1px;
   stroke: black;
   stroke-linecap: round;
-  border: 2px dashed #222;
-  box-sizing: content-box;
 }
 
 .substrate {
@@ -71,10 +79,6 @@ svg {
 .inverse {
   fill: forestgreen;
   stroke: coral;
-}
-
-.radios {
-  text-align: right;
 }
 
 .download {
