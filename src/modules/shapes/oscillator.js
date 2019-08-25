@@ -166,7 +166,7 @@ const download = (name, shapes, cell, settings) => `
 
 
 export default {
-  name: 'oscillator',
+  name: 'Rectangular LC resonator',
   params,
   constraints,
   shapes: [

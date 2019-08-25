@@ -5,7 +5,6 @@ import { prettify } from '../modules/helpers'
 const radio = (name, index, { pretty = true } = {}) => html`
   <div>
     <label>
-      ${pretty ? prettify(name) : name}:
       ${index === 0
         ? html`<input
             name="cell-picker"
@@ -19,6 +18,7 @@ const radio = (name, index, { pretty = true } = {}) => html`
           value="${index}"
         />`
       }
+      ${pretty ? prettify(name) : name}
     </label>
   </div>
 `;
