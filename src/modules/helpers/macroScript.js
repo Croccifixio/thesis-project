@@ -295,8 +295,10 @@ export const getMacroFooter = (name, cell, settings) => `
 //  //waitForSimulation()
 `
 
-export const getMacroLine = (shape) => shape.map((points, index) =>
-  index < (shape.length - 1) ? drawGeometricLine(shape, points, index) : '').join('')
+export const getMacroLine = shape => shape.map((points, index) => index < (shape.length - 1)
+  ? drawGeometricLine(shape, points, index)
+  : ''
+).join('')
 
 
 const drawGeometricLine = (shape, points, index) => `

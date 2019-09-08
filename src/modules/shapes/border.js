@@ -1,6 +1,6 @@
 export const borderParams = {
-  cellHeight: 15000,
-  cellWidth: 15000,
+  cellHeight: 16000,
+  cellWidth: 16000,
 };
 
 export const getBorderArray = (params) => {

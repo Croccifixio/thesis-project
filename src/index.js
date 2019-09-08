@@ -36,6 +36,7 @@ class Shape {
   initialParams = { ...borderParams, ...this.currentCell.params }
   currentParams = this.initialParams
   constraints = this.currentCell.constraints
+  scale = 80 / this.initialParams['cellWidth']
   $svgNode = $('#svg')
   $cellParametersNode = $('#cell-parameters')
   $cellSelectorNode = $('#cell-selector')
@@ -105,7 +106,7 @@ class Shape {
    * @param {node} input
    * @returns {boolean}
    */
-  checkValidity = (input) => input.validity
+  checkValidity = input => input.validity
     |> omit(#, ['stepMismatch', 'Symbol(Symbol.toStringTag)', 'valid'])
     |> Object.values
     |> #.every(value => value === false)
@@ -114,14 +115,21 @@ class Shape {
   /**
    * Saves the antenna as a file
    *
+   * @returns
    */
   downloadCell = () => {
+    const borderParams = {
+      cellHeight: this.currentParams.cellHeight,
+      cellWidth: this.currentParams.cellWidth,
+    }
     const scaledBorderParams = this.scaleParameters(borderParams, DOWNLOAD_SCALE)
     const shapeArrays = this.currentCell.shapes.map(shape =>
-      this.scaleParameters(this.currentParams, DOWNLOAD_SCALE)
+      this.currentParams
+      |> this.scaleParameters(#, DOWNLOAD_SCALE)
       |> shape.points
       |> this.flipYCoords(#)
     )
+
     return this.currentCell.download(this.currentCell.name, shapeArrays, scaledBorderParams, this.simulationSettings)
   }
 
@@ -149,19 +157,18 @@ class Shape {
     })
   }
 
+
   /**
    * Outputs the points in an SVG compatible format
    *
    * @param {float[]} points
    * @returns {float[]}
    */
-  flattenPointsSVG = points => {
-    return points.reduce((acc, point, index) =>
+  flattenPointsSVG = points => points.reduce((acc, point, index) =>
       (index !== points.length - 1)
         ? `${acc} ${point[0]},${point[1]}`
         : acc
       , '')
-  }
 
 
   /**
@@ -170,9 +177,7 @@ class Shape {
    * @param {float[]} points
    * @returns {float[]}
    */
-  flipYCoords = points => {
-    return points.map(point => [point[0], -point[1]])
-  }
+  flipYCoords = points => points.map(point => [point[0], -point[1]])
 
 
   /**
@@ -181,8 +186,7 @@ class Shape {
    * @returns
    */
   getAntenna = () => {
-    const scale = 80 / this.initialParams['cellWidth']
-    const scaledParameters = this.scaleParameters(this.currentParams, scale)
+    const scaledParameters = this.scaleParameters(this.currentParams, this.scale)
     const substrate = scaledParameters
       |> getBorderArray
       |> this.shiftPoints(#)
@@ -197,11 +201,11 @@ class Shape {
           shape => svg`
             <polygon
               class="${ shape.inverse ? 'inverse' : 'metal'}"
-              points=${scaledParameters
+              points="${scaledParameters
                 |> shape.points
                 |> this.shiftPoints(#)
                 |> this.flattenPointsSVG(#)
-              }
+              }"
             />
           `
         )}
@@ -218,8 +222,13 @@ class Shape {
   getCellParameterMarkup = () => html`
     ${this.currentParams
       |> Object.keys
-      |> #.filter(param => param !== 'cellHeight' && param !== 'cellWidth')
-      |> #.map(param => input(param, this.currentParams, STEP_SIZE, this.getMinConstraint(param), this.getMaxConstraint(param)))
+      |> #.map(param => input(
+        param,
+        this.currentParams,
+        STEP_SIZE,
+        (param !== 'cellHeight' && param !== 'cellWidth') ? this.getMinConstraint(param) : 14 * 10**3,
+        (param !== 'cellHeight' && param !== 'cellWidth') ? this.getMaxConstraint(param) : 18 * 10**3
+      ))
     }
   `
 
@@ -251,10 +260,9 @@ class Shape {
    * Gets the maximum value of the parameter
    *
    * @param {string} parameterName
-   * @param {float} parameterValue
    * @returns {float}
    */
-  getMaxConstraint = (parameterName) => {
+  getMaxConstraint = parameterName => {
     let fit = 0
     if (parameterName.endsWith('Horizontal') || parameterName.endsWith('Width')) fit = this.currentParams['cellWidth'] / 2
     if (parameterName.endsWith('Vertical') || parameterName.endsWith('Height')) fit = this.currentParams['cellHeight'] / 2 - 300
@@ -287,7 +295,7 @@ class Shape {
    * @param {string} parameterName
    * @returns {float}
    */
-  getMinConstraint = (parameterName) => this.constraints[parameterName].min
+  getMinConstraint = parameterName => this.constraints[parameterName].min
 
 
   /**
@@ -358,9 +366,7 @@ class Shape {
    * @param {float[]} points
    * @returns {float[]}
    */
-  shiftPoints = points => {
-    return points.map(point => [point[0] + 50, point[1] + 50])
-  }
+  shiftPoints = points => points.map(point => [point[0] + 50, point[1] + 50])
 
 
   /**
@@ -375,12 +381,13 @@ class Shape {
     })
   }
 
+
   /**
    * Updates the cell parameters
    *
    * @param {node} input
    */
-  updateCellParameters = (input) => {
+  updateCellParameters = input => {
     const parameterName = input.getAttribute('name')
     let parameterValue = parseFloat(input.value * 1000)
 
@@ -406,6 +413,7 @@ class Shape {
     this.downloadListener()
   }
 }
+
 
 const shape = new Shape()
 shape.init()
