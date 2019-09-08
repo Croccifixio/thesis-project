@@ -32,77 +32,31 @@ const STEP_SIZE = 100
 
 
 class Shape {
-    currentCell = CELLS[CELLS |> Object.keys |> #[0]]
-    initialParams = { ...borderParams, ...this.currentCell.params }
-    currentParams = this.initialParams
-    constraints = this.currentCell.constraints
-    $svgNode = $('#svg')
-    $cellParametersNode = $('#cell-parameters')
-    $cellSelectorNode = $('#cell-selector')
-    $simulationSettingsNode = $('#simulation-settings')
+  currentCell = CELLS[CELLS |> Object.keys |> #[0]]
+  initialParams = { ...borderParams, ...this.currentCell.params }
+  currentParams = this.initialParams
+  constraints = this.currentCell.constraints
+  $svgNode = $('#svg')
+  $cellParametersNode = $('#cell-parameters')
+  $cellSelectorNode = $('#cell-selector')
+  $simulationSettingsNode = $('#simulation-settings')
 
 
   /**
-   * Returns the markup for the cell selector
+   * Listens for changes on the parameter input fields
    *
-   * @returns
    */
-  getCellSelectorMarkup = () =>
-    html`
-      <div>
-        <h2>Cell Picker</h2>
-        <div class="radios">
-          ${CELLS
-            |> Object.keys
-            |> #.map((key, index) => radio({
-                index,
-                label: CELLS[key].name,
-                name: 'cell-picker',
-                value: key,
-              }))
-          }
-        </div>
-      </div>
-    `
+  bindCellParameters = () => {
+    const inputs = $$('input[type="number"]')
 
-
-  /**
-   * Returns the markup for parameter input fields
-   *
-   * @returns
-   */
-  getCellParameterMarkup = () =>
-    html`
-      ${this.currentParams
-        |> Object.keys
-        |> #.filter(param => param !== 'cellHeight' && param !== 'cellWidth')
-        |> #.map(param => input(param, this.currentParams, STEP_SIZE, this.getMinConstraint(param), this.getMaxConstraint(param)))
-      }
-    `
-
-
-  /**
-   * Returns the markup for the simulation settings
-   *
-   * @returns
-   */
-  getSimulationSettingsMarkup = () =>
-    html`
-      <div>
-        <h2>Simulation Settings</h2>
-        <div class="radios">
-          ${SIMULATION_SETTINGS
-            |> Object.keys
-            |> #.map((key, index) => radio({
-                index,
-                label: SIMULATION_SETTINGS[key],
-                name: 'simulation-type',
-                value: key,
-              }))
-          }
-        </div>
-      </div>
-    `
+    inputs.forEach((input) => {
+      INPUT_EVENTS.forEach(eventType => {
+        input.addEventListener(eventType, () => {
+          this.updateCellParameters(input)
+        })
+      })
+    })
+  }
 
 
   /**
@@ -129,53 +83,6 @@ class Shape {
 
 
   /**
-   * Listens for changes on the parameter input fields
-   *
-   */
-  bindCellParameters = () => {
-    const inputs = $$('input[type="number"]')
-
-    inputs.forEach((input) => {
-      INPUT_EVENTS.forEach(eventType => {
-        input.addEventListener(eventType, () => {
-          this.updateCellParameters(input)
-        })
-      })
-    })
-  }
-
-  /**
-   * Updates the cell parameters
-   *
-   * @param {node} input
-   */
-  updateCellParameters = (input) => {
-    const parameterName = input.getAttribute('name')
-    let parameterValue = parseFloat(input.value * 1000)
-
-    if (!this.checkValidity(input)) {
-      input.classList.add('invalid')
-      return
-    }
-
-    input.classList.remove('invalid')
-    this.currentParams[parameterName] = parameterValue
-    this.renderAntenna()
-  }
-
-  /**
-   * Checks if the provided input is valid
-   *
-   * @param {node} input
-   * @returns {boolean}
-   */
-  checkValidity = (input) => input.validity
-    |> omit(#, ['stepMismatch', 'Symbol(Symbol.toStringTag)', 'valid'])
-    |> Object.values
-    |> #.every(value => value === false)
-
-
-  /**
    * Listens for changes in the simulation settings
    *
    */
@@ -190,6 +97,154 @@ class Shape {
       })
     })
   }
+
+
+  /**
+   * Checks if the provided input is valid
+   *
+   * @param {node} input
+   * @returns {boolean}
+   */
+  checkValidity = (input) => input.validity
+    |> omit(#, ['stepMismatch', 'Symbol(Symbol.toStringTag)', 'valid'])
+    |> Object.values
+    |> #.every(value => value === false)
+
+
+  /**
+   * Saves the antenna as a file
+   *
+   */
+  downloadCell = () => {
+    const scaledBorderParams = this.scaleParameters(borderParams, DOWNLOAD_SCALE)
+    const shapeArrays = this.currentCell.shapes.map(shape =>
+      this.scaleParameters(this.currentParams, DOWNLOAD_SCALE)
+      |> shape.points
+      |> this.flipYCoords(#)
+    )
+    return this.currentCell.download(this.currentCell.name, shapeArrays, scaledBorderParams, this.simulationSettings)
+  }
+
+
+  /**
+   * Listens for clicks on the download button
+   *
+   */
+  downloadListener = () => {
+    const downloadButton = $('.download')
+    downloadButton.addEventListener('click', () => {
+      const textarea = document.createElement("textarea")
+      textarea.textContent = this.downloadCell()
+      textarea.style.position = "fixed"
+      document.body.appendChild(textarea)
+      textarea.select()
+      console.log('copied =>', textarea.textContent)
+      try {
+        return document.execCommand('copy')
+      } catch (e) {
+        console.error(e)
+      } finally {
+        document.body.removeChild(textarea)
+      }
+    })
+  }
+
+  /**
+   * Outputs the points in an SVG compatible format
+   *
+   * @param {float[]} points
+   * @returns {float[]}
+   */
+  flattenPointsSVG = points => {
+    return points.reduce((acc, point, index) =>
+      (index !== points.length - 1)
+        ? `${acc} ${point[0]},${point[1]}`
+        : acc
+      , '')
+  }
+
+
+  /**
+   * Flips the sign of y coordinates
+   *
+   * @param {float[]} points
+   * @returns {float[]}
+   */
+  flipYCoords = points => {
+    return points.map(point => [point[0], -point[1]])
+  }
+
+
+  /**
+   * Returns the SVG markup
+   *
+   * @returns
+   */
+  getAntenna = () => {
+    const scale = 80 / this.initialParams['cellWidth']
+    const scaledParameters = this.scaleParameters(this.currentParams, scale)
+    const substrate = scaledParameters
+      |> getBorderArray
+      |> this.shiftPoints(#)
+      |> this.flattenPointsSVG(#)
+
+    return svg`
+      <g>
+        <polygon class="substrate" points="${substrate}" />
+        ${repeat(
+          this.currentCell.shapes,
+          shape => shape.id,
+          shape => svg`
+            <polygon
+              class="${ shape.inverse ? 'inverse' : 'metal'}"
+              points=${scaledParameters
+                |> shape.points
+                |> this.shiftPoints(#)
+                |> this.flattenPointsSVG(#)
+              }
+            />
+          `
+        )}
+      </g>
+    `
+  }
+
+
+  /**
+   * Returns the markup for parameter input fields
+   *
+   * @returns
+   */
+  getCellParameterMarkup = () => html`
+    ${this.currentParams
+      |> Object.keys
+      |> #.filter(param => param !== 'cellHeight' && param !== 'cellWidth')
+      |> #.map(param => input(param, this.currentParams, STEP_SIZE, this.getMinConstraint(param), this.getMaxConstraint(param)))
+    }
+  `
+
+
+  /**
+   * Returns the markup for the cell selector
+   *
+   * @returns
+   */
+  getCellSelectorMarkup = () => html`
+    <div>
+      <h2>Cell Picker</h2>
+      <div class="radios">
+        ${CELLS
+          |> Object.keys
+          |> #.map((key, index) => radio({
+              index,
+              label: CELLS[key].name,
+              name: 'cell-picker',
+              value: key,
+            }))
+        }
+      </div>
+    </div>
+  `
 
 
   /**
@@ -236,15 +291,45 @@ class Shape {
 
 
   /**
-   * Stops listening for changes on the parameter input fields
+   * Returns the markup for the simulation settings
    *
+   * @returns
    */
-  unbindCellParameters = () => {
-    const inputs = $$('input[type="number"]')
+  getSimulationSettingsMarkup = () => html`
+    <div>
+      <h2>Simulation Settings</h2>
+      <div class="radios">
+        ${SIMULATION_SETTINGS
+          |> Object.keys
+          |> #.map((key, index) => radio({
+              index,
+              label: SIMULATION_SETTINGS[key],
+              name: 'simulation-type',
+              value: key,
+            }))
+        }
+      </div>
+    </div>
+  `
 
-    inputs.forEach((input) => {
-      input.removeEventListener('change', () => {})
-    })
+
+  renderAntenna = () => {
+    render(this.getAntenna(), this.$svgNode)
+  }
+
+
+  renderCellSelector = () => {
+    render(this.getCellSelectorMarkup(), this.$cellSelectorNode)
+  }
+
+
+  renderParameterInputs = () => {
+    render(this.getCellParameterMarkup(), this.$cellParametersNode)
+  }
+
+
+  renderSimulationSettings = () => {
+    render(this.getSimulationSettingsMarkup(), this.$simulationSettingsNode)
   }
 
 
@@ -279,122 +364,34 @@ class Shape {
 
 
   /**
-   * Outputs the points in an SVG compatible format
-   *
-   * @param {float[]} points
-   * @returns {float[]}
-   */
-  flattenPointsSVG = points => {
-    return points.reduce((acc, point, index) =>
-      (index !== points.length - 1)
-        ? `${acc} ${point[0]},${point[1]}`
-        : acc
-      , '')
-  }
-
-
-  /**
-   * Flips the sign of y coordinates
-   *
-   * @param {float[]} points
-   * @returns {float[]}
-   */
-  flipYCoords = points => {
-    return points.map(point => [point[0], -point[1]])
-  }
-
-
-  /**
-   * Listens for clicks on the download button
+   * Stops listening for changes on the parameter input fields
    *
    */
-  downloadListener = () => {
-    const downloadButton = $('.download')
-    downloadButton.addEventListener('click', () => {
-      const textarea = document.createElement("textarea")
-      textarea.textContent = this.downloadCell()
-      textarea.style.position = "fixed"
-      document.body.appendChild(textarea)
-      textarea.select()
-      console.log('copied =>', textarea.textContent)
-      try {
-        return document.execCommand('copy')
-      } catch (e) {
-        console.error(e)
-      } finally {
-        document.body.removeChild(textarea)
-      }
+  unbindCellParameters = () => {
+    const inputs = $$('input[type="number"]')
+
+    inputs.forEach((input) => {
+      input.removeEventListener('change', () => {})
     })
   }
 
-
   /**
-   * Saves the antenna as a file
+   * Updates the cell parameters
    *
+   * @param {node} input
    */
-  downloadCell = () => {
-    const scaledBorderParams = this.scaleParameters(borderParams, DOWNLOAD_SCALE)
-    const shapeArrays = this.currentCell.shapes.map(shape =>
-      this.scaleParameters(this.currentParams, DOWNLOAD_SCALE)
-      |> shape.points
-      |> this.flipYCoords(#)
-    )
-    return this.currentCell.download(this.currentCell.name, shapeArrays, scaledBorderParams, this.simulationSettings)
-  }
+  updateCellParameters = (input) => {
+    const parameterName = input.getAttribute('name')
+    let parameterValue = parseFloat(input.value * 1000)
 
+    if (!this.checkValidity(input)) {
+      input.classList.add('invalid')
+      return
+    }
 
-  /**
-   * Returns the SVG markup
-   *
-   * @returns
-   */
-  getAntenna = () => {
-    const scale = 80 / this.initialParams['cellWidth']
-    const scaledParameters = this.scaleParameters(this.currentParams, scale)
-    const substrate = scaledParameters
-      |> getBorderArray
-      |> this.shiftPoints(#)
-      |> this.flattenPointsSVG(#)
-
-    return svg`
-      <g>
-        <polygon class="substrate" points="${substrate}" />
-        ${repeat(
-          this.currentCell.shapes,
-          shape => shape.id,
-          shape => svg`
-            <polygon
-              class="${ shape.inverse ? 'inverse' : 'metal'}"
-              points=${scaledParameters
-                |> shape.points
-                |> this.shiftPoints(#)
-                |> this.flattenPointsSVG(#)
-              }
-            />
-          `
-        )}
-      </g>
-    `
-  }
-
-
-  renderAntenna = () => {
-    render(this.getAntenna(), this.$svgNode)
-  }
-
-
-  renderCellSelector = () => {
-    render(this.getCellSelectorMarkup(), this.$cellSelectorNode)
-  }
-
-
-  renderSimulationSettings = () => {
-    render(this.getSimulationSettingsMarkup(), this.$simulationSettingsNode)
-  }
-
-
-  renderParameterInputs = () => {
-    render(this.getCellParameterMarkup(), this.$cellParametersNode)
+    input.classList.remove('invalid')
+    this.currentParams[parameterName] = parameterValue
+    this.renderAntenna()
   }
 
 
