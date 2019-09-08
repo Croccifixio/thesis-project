@@ -1,4 +1,3 @@
-export * from './arrToObj'
 export * from './getConstraint'
 export * from './keycodes'
 export * from './macroScript'

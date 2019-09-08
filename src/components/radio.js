@@ -1,27 +1,27 @@
-import { html } from 'lit-html';
+import { html } from 'lit-html'
 import { prettify } from '../modules/helpers'
 
 
-const radio = (name, index, { pretty = true } = {}) => html`
+const radio = ({index, label, name, value }) => html`
   <div>
     <label>
       ${index === 0
         ? html`<input
-            name="cell-picker"
+            name="${name}"
             type="radio"
-            value="${index}"
+            value="${value}"
             checked
           />`
         : html`<input
-          name="cell-picker"
+          name="${name}"
           type="radio"
-          value="${index}"
+          value="${value}"
         />`
       }
-      ${pretty ? prettify(name) : name}
+      ${label}
     </label>
   </div>
-`;
+`
 
 
-export default radio;
+export default radio

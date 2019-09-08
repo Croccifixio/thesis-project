@@ -9,7 +9,7 @@ import input from './components/input'
 import radio from './components/radio'
 
 // Helpers
-import { $, $$, arrToObj, getConstraint, keycodes, round } from './modules/helpers'
+import { $, $$, getConstraint, keycodes, round } from './modules/helpers'
 
 // Shapes
 import { borderParams, getBorderArray } from './modules/shapes/border'
@@ -18,18 +18,21 @@ import squareRing from './modules/shapes/square-ring'
 import oscillator from './modules/shapes/oscillator'
 
 
+const CELLS = {
+  'square-ring': squareRing,
+  'oscillator': oscillator,
+}
 const DOWNLOAD_SCALE = 0.000001
 const INPUT_EVENTS = ['blur', 'keyup', 'mouseup']
-const SIMULATION_SETTINGS = arrToObj(['FFT', 'S-parameters'])
+const SIMULATION_SETTINGS = {
+  'fft': 'FFT',
+  's-parameters': 'S-parameters',
+}
 const STEP_SIZE = 100
 
 
 class Shape {
-    cells = [
-      squareRing,
-      oscillator,
-    ]
-    currentCell = this.cells[0]
+    currentCell = CELLS[CELLS |> Object.keys |> #[0]]
     initialParams = { ...borderParams, ...this.currentCell.params }
     currentParams = this.initialParams
     constraints = this.currentCell.constraints
@@ -49,7 +52,15 @@ class Shape {
       <div>
         <h2>Cell Picker</h2>
         <div class="radios">
-          ${this.cells.map(({ name }, index) => radio(name, index, { pretty: false }))}
+          ${CELLS
+            |> Object.keys
+            |> #.map((key, index) => radio({
+                index,
+                label: CELLS[key].name,
+                name: 'cell-picker',
+                value: key,
+              }))
+          }
         </div>
       </div>
     `
@@ -81,8 +92,14 @@ class Shape {
         <h2>Simulation Settings</h2>
         <div class="radios">
           ${SIMULATION_SETTINGS
-            |> Object.values
-            |> #.map((name, index) => radio(name, index, { pretty: false }))}
+            |> Object.keys
+            |> #.map((key, index) => radio({
+                index,
+                label: SIMULATION_SETTINGS[key],
+                name: 'simulation-type',
+                value: key,
+              }))
+          }
         </div>
       </div>
     `
@@ -99,7 +116,7 @@ class Shape {
       radio.addEventListener('change', () => {
         if (radio.checked) {
           this.unbindCellParameters()
-          this.currentCell = this.cells[radio.value]
+          this.currentCell = CELLS[radio.value]
           this.currentParams = { ...borderParams, ...this.currentCell.params }
           this.constraints = this.currentCell.constraints
           this.renderParameterInputs()
@@ -168,7 +185,7 @@ class Shape {
     radios.forEach((radio) => {
       radio.addEventListener('change', () => {
         if (radio.checked) {
-          this.simulationSettings = SIMULATION_SETTINGS[radio.value]
+          this.simulationSettings = radio.value
         }
       })
     })

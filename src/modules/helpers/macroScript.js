@@ -239,15 +239,15 @@ export const getMacroFooter = (name, cell, settings) => `
 
     newSimData.setTerminationCriteria(terminationCriteria)
 
-    ${settings === 'S-parameters' && `
+    ${settings === 's-parameters' ? `
       newSimData.excitationType = NewSimulationData.DiscreteSources
       newSimData.enableSParameters = true
       newSimData.setPortAsActive(circuitComponent)
-    `}
+    ` : ''}
 
-    ${settings === 'FFT' && `
+    ${settings === 'fft' ? `
       newSimData.excitationType = NewSimulationData.ExternalExcitation
-    `}
+    ` : ''}
 
     App.saveCurrentProject()
     App.getActiveProject().createSimulation(true)
