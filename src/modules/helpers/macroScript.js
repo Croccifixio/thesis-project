@@ -271,15 +271,15 @@ export const getMacroFooter = (name, cell, settings) => `
 //    query.timeDependence = ResultQuery.Transient
 //    query.resultType = ResultQuery.E
 //    query.fieldScatter = ResultQuery.TotalField
-//    query.resultComponent = ResultQuery.X  only y-component VectorMagnitude
+//    query.resultComponent = ResultQuery.X // only y-component VectorMagnitude
 //    query.dataTransform = ResultQuery.Fft
 //    query.fftSize = 16
 //    query.complexPart = ResultQuery.ComplexMagnitude
 //    query.surfaceInterpolationResolution = ResultQuery.NoInterpolation
 //    query.setDimensionRange( "Time" , 0, '10 ms' )
-//
+
 //    Output.println("Time Dimension Max: "+query.getDimensionMax("Time"))
-//
+
 //    var result
 //    result = new ResultDataSet( "" )
 //    result.setQuery(query)
