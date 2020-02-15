@@ -14,7 +14,7 @@ const SIMULATION_SETTINGS = {
 
 export const getMacroHeader = () => macroHeader
 
-export const getMacroFooter = (name, cell, settings) => macroFooter
+export const getMacroFooter = ({ cell, name, params, settings }) => macroFooter
   .replace('__CELL_WIDTH__', cell.cellWidth)
   .replace('__CELL_HEIGHT__', cell.cellHeight)
   .replace('__NAME__', name)

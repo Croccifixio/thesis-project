@@ -1,6 +1,6 @@
 import { html, render, svg } from 'lit-html'
 import { repeat } from 'lit-html/directives/repeat'
-import omit from 'lodash.omit'
+import { mapObjIndexed, omit } from 'ramda'
 
 import style from './assets/styles/main.scss'
 
@@ -110,7 +110,7 @@ class Shape {
    * @returns {boolean}
    */
   checkValidity = input => input.validity
-    |> omit(#, ['stepMismatch', 'Symbol(Symbol.toStringTag)', 'valid'])
+    |> omit(['stepMismatch', 'Symbol(Symbol.toStringTag)', 'valid'])(#)
     |> Object.values
     |> #.every(value => value === false)
 
@@ -133,7 +133,13 @@ class Shape {
       |> this.flipYCoords(#)
     )
 
-    return this.currentCell.download(this.currentCell.name, shapeArrays, scaledBorderParams, this.simulationSettings)
+    return this.currentCell.download({
+      cell: scaledBorderParams,
+      name: this.currentCell.name,
+      params: this.currentParams,
+      settings: this.simulationSettings,
+      shapes: shapeArrays,
+    })
   }
 
 
@@ -351,16 +357,7 @@ class Shape {
    * @param {float} scale
    * @returns {object}
    */
-  scaleParameters = (parameters, scale) => {
-    let scaledParameters = {}
-    const parameterNames = Object.keys(parameters)
-    const parameterValues = Object.values(parameters)
-    parameterNames.forEach((parameterName, index) => {
-      scaledParameters[parameterNames[index]] = scale * parameterValues[index]
-    })
-
-    return scaledParameters
-  }
+  scaleParameters = (parameters, scale) => mapObjIndexed((value) => value * scale)(parameters)
 
 
   /**
