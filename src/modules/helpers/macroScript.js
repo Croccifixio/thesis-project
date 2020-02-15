@@ -14,11 +14,12 @@ const SIMULATION_SETTINGS = {
 
 export const getMacroHeader = () => macroHeader
 
-export const getMacroFooter = ({ cell, name, params, settings }) => macroFooter
+export const getMacroFooter = ({ cell, name, params, scale, settings, surfaceSensorPosition }) => macroFooter
   .replace('__CELL_WIDTH__', cell.cellWidth)
   .replace('__CELL_HEIGHT__', cell.cellHeight)
   .replace('__NAME__', name)
   .replace('__SIMULATION_SETTINGS__', SIMULATION_SETTINGS[settings])
+  .replace('__SURFACE_SENSOR_POSITION__', scale * surfaceSensorPosition(params))
 
 export const getMacroLine = shape => shape.map((points, index) => index < (shape.length - 1)
   ? drawGeometricLine(shape, points, index)

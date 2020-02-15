@@ -40,20 +40,27 @@ View.zoomToExtents()
   App.getActiveProject().getExternalExcitationList().addExternalExcitation( planeWave )
 })()
 
-;(function createPointSensor() {
+;(function createPointSensors() {
   var sensor = new PointSensor()
   var sensorGeometry = new PointPositionGeometry()
+  var surfaceSensor = new PointSensor()
+  var surfaceSensorGeometry = new PointPositionGeometry()
   var sensorDataDefinition = new PointSensorDataDefinition()
 
   sensorDataDefinition.name = 'Point Sensor Definition'
   sensorDataDefinition.setCollectEFieldsVsTime( true )
   sensorDataDefinition.setCollectHFieldsVsTime( true )
   sensorGeometry.setPosition( CoordinateSystemPosition( 0, 0, '15 mm' ) )
+  surfaceSensorGeometry.setPosition( CoordinateSystemPosition( 0, __SURFACE_SENSOR_POSITION__, '0.1 mm' ) )
   sensor.name = 'Point Sensor'
   sensor.setGeometry( sensorGeometry )
   sensor.setDataDefinition( sensorDataDefinition )
+  surfaceSensor.name = 'Surface Point Sensor'
+  surfaceSensor.setGeometry( surfaceSensorGeometry )
+  surfaceSensor.setDataDefinition( sensorDataDefinition )
 
   App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
+  App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( surfaceSensor )
 })()
 
 //;(function createPlaneSensor() {

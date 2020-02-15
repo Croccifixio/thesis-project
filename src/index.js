@@ -137,6 +137,7 @@ class Shape {
       cell: scaledBorderParams,
       name: this.currentCell.name,
       params: this.currentParams,
+      scale: DOWNLOAD_SCALE,
       settings: this.simulationSettings,
       shapes: shapeArrays,
     })

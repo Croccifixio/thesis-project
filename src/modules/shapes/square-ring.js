@@ -163,10 +163,13 @@ const getInnerArray = (params) => {
 };
 
 
-const download = ({ cell, name, params, settings, shapes }) => `
+const surfaceSensorPosition = ({ cellHeight, outerMarginVertical, outerThicknessVertical }) => (cellHeight / 2) - outerMarginVertical - (outerThicknessVertical / 2)
+
+
+const download = ({ cell, name, params, scale, settings, shapes }) => `
   ${getMacroHeader()}
   ${shapes.map(shape => getMacroLine(shape)).join('')}
-  ${getMacroFooter({ cell, name, params, settings })}
+  ${getMacroFooter({ cell, name, params, scale, settings, surfaceSensorPosition })}
 `
 
 
