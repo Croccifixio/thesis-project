@@ -169,7 +169,7 @@ const download = ({ cell, name, params, scale, settings, shapes }) => `
 
 
 export default {
-  name: 'Rectangular LC resonator',
+  name: 'Rectangular T-shaped resonator',
   params,
   constraints,
   shapes: [
