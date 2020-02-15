@@ -171,7 +171,7 @@ const download = ({ cell, name, params, settings, shapes }) => `
 
 
 export default {
-  name: 'Rectangluar split-ring resonator',
+  name: 'Rectangular split-ring resonator',
   params,
   constraints,
   shapes: [
