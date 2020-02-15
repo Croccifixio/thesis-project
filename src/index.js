@@ -165,10 +165,10 @@ class Shape {
    * @returns {float[]}
    */
   flattenPointsSVG = points => points.reduce((acc, point, index) =>
-      (index !== points.length - 1)
-        ? `${acc} ${point[0]},${point[1]}`
-        : acc
-      , '')
+    (index !== points.length - 1)
+      ? `${acc} ${point[0]},${point[1]}`
+      : acc
+    , '')
 
 
   /**
