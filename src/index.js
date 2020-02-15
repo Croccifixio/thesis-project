@@ -91,6 +91,9 @@ class Shape {
     const radios = $$('#simulation-settings input[type="radio"]')
 
     radios.forEach((radio) => {
+      if (radio.checked) {
+        this.simulationSettings = radio.value
+      }
       radio.addEventListener('change', () => {
         if (radio.checked) {
           this.simulationSettings = radio.value
