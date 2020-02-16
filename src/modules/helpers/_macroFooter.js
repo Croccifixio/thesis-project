@@ -96,6 +96,7 @@ View.zoomToExtents()
   boundaryConditions.yUpperBoundaryType = BoundaryConditions.Periodic
 })()
 
+var circuitComponent = new CircuitComponent()
 var txAntenna
 var rxAntenna
 var txFeed
@@ -103,7 +104,6 @@ var rxLoad
 
 function renderAntenna( top ) {
   var impedanceSpecification = new RLCSpecification( '50 ohm', 0, 0 )
-  var circuitComponent = new CircuitComponent()
 
   if (top) {
     var name = 'Tx Antenna'
@@ -181,9 +181,10 @@ renderAntenna(false)
 var step = 0
 
 while (step <= STEPS) {
+  var deltaZ = step * STEP_SIZE
+
   if (step > 0) {
     var sensorGeometry = new PointPositionGeometry()
-    var deltaZ = (step + 1) * STEP_SIZE
     txAntenna.getCoordinateSystem().translate(new Cartesian3D(0, 0, -STEP_SIZE/1000))
     rxAntenna.getCoordinateSystem().translate(new Cartesian3D(0, 0, STEP_SIZE/1000))
     txFeed.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, (15.1 - deltaZ)/1000 ) )
@@ -203,7 +204,7 @@ while (step <= STEPS) {
     terminationCriteria.setMaximumSimulationTime('1 us')
     terminationCriteria.setMaximumWallClockTime('0')
 
-    newSimData.name = step
+    newSimData.name = 'd='+(15 - deltaZ)+'mm'
     newSimData.setTerminationCriteria(terminationCriteria)
 
     __SIMULATION_SETTINGS__
