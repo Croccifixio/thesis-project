@@ -1,5 +1,7 @@
 var MIN_FREQ = '1 GHz'
     MAX_FREQ = '11 GHz'
+    STEP_SIZE = 3
+    STEPS = 3
 
 ;(function clearProject() {
   App.getActiveProject().getCircuitComponentDefinitionList().clear()

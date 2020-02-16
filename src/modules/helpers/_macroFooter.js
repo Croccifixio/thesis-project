@@ -40,6 +40,8 @@ View.zoomToExtents()
   App.getActiveProject().getExternalExcitationList().addExternalExcitation( planeWave )
 })()
 
+  var pointSensor
+
 ;(function createPointSensors() {
   var sensor = new PointSensor()
   var sensorGeometry = new PointPositionGeometry()
@@ -59,7 +61,7 @@ View.zoomToExtents()
   surfaceSensor.setGeometry( surfaceSensorGeometry )
   surfaceSensor.setDataDefinition( sensorDataDefinition )
 
-  App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
+  pointSensor = App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( sensor )
   App.getActiveProject().getNearFieldSensorList().addNearFieldSensor( surfaceSensor )
 })()
 
@@ -94,10 +96,14 @@ View.zoomToExtents()
   boundaryConditions.yUpperBoundaryType = BoundaryConditions.Periodic
 })()
 
-var circuitComponent = new CircuitComponent()
+var txAntenna
+var rxAntenna
+var txFeed
+var rxLoad
 
 function renderAntenna( top ) {
   var impedanceSpecification = new RLCSpecification( '50 ohm', 0, 0 )
+  var circuitComponent = new CircuitComponent()
 
   if (top) {
     var name = 'Tx Antenna'
@@ -112,7 +118,7 @@ function renderAntenna( top ) {
     circuitComponent.setCircuitComponentDefinition( feed )
     circuitComponent.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, 0.0151 ) )
     circuitComponent.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, 0.0151 ) )
-    App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
+    txFeed = App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
   } else {
     var name = 'Rx Antenna'
     var zMultiplier = -1
@@ -125,7 +131,7 @@ function renderAntenna( top ) {
     circuitComponent.setCircuitComponentDefinition( passiveLoad )
     circuitComponent.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, -0.0149 ) )
     circuitComponent.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, -0.0149 ) )
-    App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
+    rxLoad = App.getActiveProject().getCircuitComponentList().addCircuitComponent( circuitComponent )
   }
 
   var antenna = new Sketch()
@@ -158,32 +164,56 @@ function renderAntenna( top ) {
   finalModel = new Model()
   finalModel.setRecipe(recipe)
   finalModel.name = name
-  var antennaModel = App.getActiveProject().getGeometryAssembly().append( finalModel )
   var antennaMaterial = App.getActiveProject().getMaterialList().getMaterial( 'PEC' )
 
-
-  App.getActiveProject().setMaterial( antennaModel, antennaMaterial )
+  if (top) {
+    txAntenna = App.getActiveProject().getGeometryAssembly().append( finalModel )
+    App.getActiveProject().setMaterial( txAntenna, antennaMaterial )
+  } else {
+    rxAntenna = App.getActiveProject().getGeometryAssembly().append( finalModel )
+    App.getActiveProject().setMaterial( rxAntenna, antennaMaterial )
+  }
 }
 
 renderAntenna(true)
 renderAntenna(false)
 
-;(function createSimulation() {
-  var newSimData = App.getActiveProject().getNewSimulationData()
-  var terminationCriteria = newSimData.getTerminationCriteria()
+var step = 0
 
-  terminationCriteria.setConvergenceThreshold(-30)
-  terminationCriteria.setMinimumSimulationTime('0.01 us')
-  terminationCriteria.setMaximumSimulationTime('1 us')
-  terminationCriteria.setMaximumWallClockTime('0')
+while (step <= STEPS) {
+  if (step > 0) {
+    var sensorGeometry = new PointPositionGeometry()
+    var deltaZ = (step + 1) * STEP_SIZE
+    txAntenna.getCoordinateSystem().translate(new Cartesian3D(0, 0, -STEP_SIZE/1000))
+    rxAntenna.getCoordinateSystem().translate(new Cartesian3D(0, 0, STEP_SIZE/1000))
+    txFeed.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, (15.1 - deltaZ)/1000 ) )
+    txFeed.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, (15.1 - deltaZ)/1000 ) )
+    rxLoad.setEndpoint1( new CoordinateSystemPosition( -0.0005, -0.0047178, (-14.9 + deltaZ)/1000 ) )
+    rxLoad.setEndpoint2( new CoordinateSystemPosition( 0.0005, -0.0047178, (-14.9 + deltaZ)/1000 ) )
+    sensorGeometry.setPosition( CoordinateSystemPosition( 0, 0, (15 - deltaZ)+' mm' ) )
+    pointSensor.setGeometry( sensorGeometry )
+  }
 
-  newSimData.setTerminationCriteria(terminationCriteria)
+  ;(function createSimulation() {
+    var newSimData = App.getActiveProject().getNewSimulationData()
+    var terminationCriteria = newSimData.getTerminationCriteria()
 
-  __SIMULATION_SETTINGS__
+    terminationCriteria.setConvergenceThreshold(-30)
+    terminationCriteria.setMinimumSimulationTime('0.01 us')
+    terminationCriteria.setMaximumSimulationTime('1 us')
+    terminationCriteria.setMaximumWallClockTime('0')
 
-  App.saveCurrentProject()
-  // App.getActiveProject().createSimulation(true)
-})()
+    newSimData.name = step
+    newSimData.setTerminationCriteria(terminationCriteria)
+
+    __SIMULATION_SETTINGS__
+
+    App.saveCurrentProject()
+    App.getActiveProject().createSimulation(true)
+  })()
+
+  step++
+}
 
 ;(function runSimulations() {
   // var simIds = App.getActiveProject().getSimulationIds()
