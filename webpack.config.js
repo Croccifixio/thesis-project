@@ -1,10 +1,15 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require("copy-webpack-plugin");
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const Path = require('path');
 
 module.exports = {
   entry: {
-    main: './src/index.js'
+    main: './src/index.js',
+  },
+  output: {
+    path: Path.resolve(process.cwd(), 'dist')
   },
   module: {
     rules: [
@@ -38,6 +43,9 @@ module.exports = {
     ]
   },
   plugins: [
+    new CleanWebpackPlugin({
+      verbose: true
+    }),
     new HtmlWebpackPlugin({
       template: './src/index.html',
       filename: 'index.html'
@@ -49,6 +57,6 @@ module.exports = {
       patterns: [
         { from: "./src/assets/docs", to: "." },
       ],
-    }),
+    })
   ]
 }
