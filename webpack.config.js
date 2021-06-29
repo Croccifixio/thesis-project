@@ -30,7 +30,7 @@ module.exports = {
           {
             loader: 'sass-loader',
             options: {
-              sourceMaps: true
+              sourceMap: true
             }
           }
         ]
@@ -45,8 +45,10 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: '[name].css'
     }),
-    new CopyPlugin([
-      { from: "./src/assets/docs", to: "." },
-    ]),
+    new CopyPlugin({
+      patterns: [
+        { from: "./src/assets/docs", to: "." },
+      ],
+    }),
   ]
 }
